@@ -1,4 +1,4 @@
-build/main.o: main.c core/Init_main/init.h \
+build/init.o: core/Init_main/init.c core/Init_main/init.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/FreeRTOS.h \
  core/include/FreeRTOSConfig.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/Include/trcRecorder.h \
@@ -20,7 +20,4 @@ build/main.o: main.c core/Init_main/init.h \
  core/include/console.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/semphr.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
- /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
- Inc/Shared_Configuration.h \
- /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
- Inc/Server/Server_Task.h Inc/Client/Dispatcher_Task.h
+ /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h

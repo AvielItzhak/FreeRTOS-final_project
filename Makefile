@@ -17,6 +17,8 @@ INCLUDE_DIRS          += -I./Trace_Recorder_Configuration
 INCLUDE_DIRS          += -I./core/include
 INCLUDE_DIRS          += -I./core/Init_main
 INCLUDE_DIRS          += -I./Inc
+INCLUDE_DIRS          += -I./Inc/Server
+INCLUDE_DIRS          += -I./Inc/Client
 INCLUDE_DIRS          += -I${KERNEL_DIR}/include
 INCLUDE_DIRS          += -I${KERNEL_DIR}/portable/ThirdParty/GCC/Posix
 INCLUDE_DIRS          += -I${KERNEL_DIR}/portable/ThirdParty/GCC/Posix/utils
@@ -26,11 +28,14 @@ INCLUDE_DIRS          += -I${FREERTOS_PLUS_DIR}/Source/FreeRTOS-Plus-Trace/confi
 INCLUDE_DIRS          += -I${FREERTOS_PLUS_DIR}/Source/FreeRTOS-Plus-Trace/streamports/File/include
 INCLUDE_DIRS          += -I${FREERTOS_PLUS_DIR}/Source/FreeRTOS-Plus-Trace/streamports/File/config
 
+
 SOURCE_FILES          := $(wildcard *.c)
 SOURCE_FILES          += $(wildcard ${FREERTOS_DIR}/core/Source/*.c)
 SOURCE_FILES          += $(wildcard ./core/src/*.c)
 SOURCE_FILES          += $(wildcard ./core/Init_main/*.c)
 SOURCE_FILES          += $(wildcard ./Src/*.c)
+SOURCE_FILES          += $(wildcard ./Src/Server/*.c)
+SOURCE_FILES          += $(wildcard ./Src/Client/*.c)
 # Memory manager (use malloc() / free() )
 SOURCE_FILES          += ${KERNEL_DIR}/portable/MemMang/heap_3.c
 # posix port
@@ -64,6 +69,7 @@ SOURCE_FILES          += ${FREERTOS_DIR}/core/Common/Minimal/StreamBufferInterru
 SOURCE_FILES          += ${FREERTOS_DIR}/core/Common/Minimal/TaskNotify.c
 SOURCE_FILES          += ${FREERTOS_DIR}/core/Common/Minimal/TimerDemo.c
 
+VPATH = $(sort $(dir $(SOURCE_FILES))) # to help make find source files in their directories
 
 
 CFLAGS                :=    -ggdb3
@@ -112,7 +118,7 @@ ifeq ($(USER_DEMO),FULL_DEMO)
 endif
 
 
-OBJ_FILES = $(SOURCE_FILES:%.c=$(BUILD_DIR)/%.o)
+OBJ_FILES = $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCE_FILES:%.c=%.o))) # needed to avoid path issues
 
 DEP_FILE = $(OBJ_FILES:%.o=%.d)
 
@@ -125,8 +131,10 @@ ${BUILD_DIR}/${BIN} : ${OBJ_FILES}
 -include ${DEP_FILE}
 
 ${BUILD_DIR}/%.o : %.c Makefile
-	-mkdir -p $(@D)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -c $< -o $@
+	@mkdir -p $(@D)
+	@echo "Compiling: $<"
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -c $< -o $@  
+  # made changes here to add -MMD for dependency files
 
 .PHONY: clean
 

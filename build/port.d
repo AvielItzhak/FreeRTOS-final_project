@@ -1,4 +1,6 @@
-build/main.o: main.c core/Init_main/init.h \
+build/port.o: \
+ /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/portable/ThirdParty/GCC/Posix/port.c \
+ /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/portable/ThirdParty/GCC/Posix/portmacro.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/FreeRTOS.h \
  core/include/FreeRTOSConfig.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/Include/trcRecorder.h \
@@ -12,15 +14,9 @@ build/main.o: main.c core/Init_main/init.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/projdefs.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/portable.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/deprecated_definitions.h \
- /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/portable/ThirdParty/GCC/Posix/portmacro.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/mpu_wrappers.h \
- core/include/main_config.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/list.h \
- core/include/console.h \
- /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/semphr.h \
- /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
+ /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/timers.h \
  /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
- Inc/Shared_Configuration.h \
- /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
- Inc/Server/Server_Task.h Inc/Client/Dispatcher_Task.h
+ /media/aviel/DELL_Storage/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/portable/ThirdParty/GCC/Posix/utils/wait_for_event.h
