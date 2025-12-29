@@ -30,9 +30,10 @@
 
 /* Keeps track of the task's stack low mark */
 typedef struct {
-	void* tcb;
-	uint32_t uiPreviousLowMark;
+    void* tcb;
+    TraceUnsignedBaseType_t uiPreviousLowMark; /* Must match port word-size (32/64-bit) */
 } TaskStackMonitorEntry_t;
+
 
 TraceKernelPortDataBuffer_t xKernelPortDataBuffer;
 
@@ -3247,26 +3248,27 @@ void prvTracePortGetTimeStamp(uint32_t *pTimestamp)
 
 void prvAddTaskToStackMonitor(void* task)
 {
-	int i;
-	int foundEmptySlot = 0;
+    int i;
+    int foundEmptySlot = 0;
 
-	// find an empty slot
-	for (i = 0; i < TRC_CFG_STACK_MONITOR_MAX_TASKS; i++)
-	{
-		if (tasksInStackMonitor[i].tcb == 0)
-		{
-			tasksInStackMonitor[i].tcb = task;
-			tasksInStackMonitor[i].uiPreviousLowMark = 0xFFFFFFFF;
-			foundEmptySlot = 1;
-			break;
-		}
-	}
+    /* Find an empty slot */
+    for (i = 0; i < TRC_CFG_STACK_MONITOR_MAX_TASKS; i++)
+    {
+        if (tasksInStackMonitor[i].tcb == 0)
+        {
+            tasksInStackMonitor[i].tcb = task;
+            tasksInStackMonitor[i].uiPreviousLowMark = (TraceUnsignedBaseType_t)~0u; /* Max value for this type */
+            foundEmptySlot = 1;
+            break;
+        }
+    }
 
-	if (foundEmptySlot == 0)
-	{
-		tasksNotIncluded++;
-	}
+    if (foundEmptySlot == 0)
+    {
+        tasksNotIncluded++;
+    }
 }
+
 
 void prvRemoveTaskFromStackMonitor(void* task)
 {
@@ -3284,31 +3286,39 @@ void prvRemoveTaskFromStackMonitor(void* task)
 
 void prvReportStackUsage()
 {
-	static int i = 0;	/* Static index used to loop over the monitored tasks */
-	int count = 0;		/* The number of generated reports */
-	int initial = i;	/* Used to make sure we break if we are back at the inital value */
+    static int i = 0;   /* Static index used to loop over the monitored tasks */
+    int count = 0;      /* The number of generated reports */
+    int initial = i;    /* Used to make sure we break if we are back at the initial value */
 
-	do
-	{
-		/* Check the current spot */
-		if (tasksInStackMonitor[i].tcb != 0)
-		{
-			/* Get the amount of unused stack */
-			uint32_t unusedStackSpace;
-			xTraceKernelPortGetUnusedStack(tasksInStackMonitor[i].tcb, &unusedStackSpace);
+    do
+    {
+        if (tasksInStackMonitor[i].tcb != 0)
+        {
+            /* Get the amount of unused stack.
+             * IMPORTANT: TraceUnsignedBaseType_t matches the kernel port word-size (32/64-bit). */
+            TraceUnsignedBaseType_t unusedStackSpace = 0;
+            xTraceKernelPortGetUnusedStack(tasksInStackMonitor[i].tcb, &unusedStackSpace);
 
-			/* Store for later use */
-			if (tasksInStackMonitor[i].uiPreviousLowMark > unusedStackSpace)
-				tasksInStackMonitor[i].uiPreviousLowMark = unusedStackSpace;
+            /* Store for later use */
+            if (tasksInStackMonitor[i].uiPreviousLowMark > unusedStackSpace)
+            {
+                tasksInStackMonitor[i].uiPreviousLowMark = unusedStackSpace;
+            }
 
-			prvTraceStoreKernelCallWithParam(TRACE_UNUSED_STACK, TRACE_CLASS_TASK, TRACE_GET_TASK_NUMBER(tasksInStackMonitor[i].tcb), tasksInStackMonitor[i].uiPreviousLowMark);
+            prvTraceStoreKernelCallWithParam(
+                TRACE_UNUSED_STACK,
+                TRACE_CLASS_TASK,
+                TRACE_GET_TASK_NUMBER(tasksInStackMonitor[i].tcb),
+                (uint32_t)tasksInStackMonitor[i].uiPreviousLowMark
+            );
 
-			count++;
-		}
+            count++;
+        }
 
-		i = (i + 1) % TRC_CFG_STACK_MONITOR_MAX_TASKS; // Move i beyond this task
-	} while (count < TRC_CFG_STACK_MONITOR_MAX_REPORTS && i != initial);
+        i = (i + 1) % TRC_CFG_STACK_MONITOR_MAX_TASKS; /* Move to next task slot */
+    } while (count < TRC_CFG_STACK_MONITOR_MAX_REPORTS && i != initial);
 }
+
 #endif /* defined(TRC_CFG_ENABLE_STACK_MONITOR) && (TRC_CFG_ENABLE_STACK_MONITOR == 1) && (TRC_CFG_SCHEDULING_ONLY == 0) */
 
 

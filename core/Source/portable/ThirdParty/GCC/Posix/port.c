@@ -131,7 +131,7 @@ portSTACK_TYPE * pxPortInitialiseStack( portSTACK_TYPE * pxTopOfStack,
 {
     Thread_t * thread;
     pthread_attr_t xThreadAttributes;
-    size_t ulStackSize;
+    size_t ulStackSizeBytes;
     int iRet;
 
     ( void ) pthread_once( &hSigSetupThread, prvSetupSignalsAndSchedulerPolicy );
@@ -141,18 +141,32 @@ portSTACK_TYPE * pxPortInitialiseStack( portSTACK_TYPE * pxTopOfStack,
      */
     thread = ( Thread_t * ) ( pxTopOfStack + 1 ) - 1;
     pxTopOfStack = ( portSTACK_TYPE * ) thread - 1;
-    ulStackSize = ( pxTopOfStack + 1 - pxEndOfStack ) * sizeof( *pxTopOfStack );
+
+    /* Calculate stack size in bytes. */
+    ulStackSizeBytes = ( size_t ) ( ( pxTopOfStack + 1 - pxEndOfStack ) * sizeof( *pxTopOfStack ) );
 
     thread->pxCode = pxCode;
     thread->pvParams = pvParameters;
     thread->xDying = pdFALSE;
 
     pthread_attr_init( &xThreadAttributes );
-    iRet = pthread_attr_setstack( &xThreadAttributes, pxEndOfStack, ulStackSize );
+
+    /*
+     * Use pthread_attr_setstacksize() so the OS chooses a valid stack address.
+     * pthread_attr_setstack() requires a base address and alignment/page constraints,
+     * and passing an "end of stack" pointer will typically fail with EINVAL.
+     */
+    if( ulStackSizeBytes < ( size_t ) PTHREAD_STACK_MIN )
+    {
+        ulStackSizeBytes = ( size_t ) PTHREAD_STACK_MIN;
+    }
+
+    iRet = pthread_attr_setstacksize( &xThreadAttributes, ulStackSizeBytes );
     if( iRet != 0 )
     {
-        fprintf( stderr, "[WARN] pthread_attr_setstack failed with return value: %d. Default stack will be used.\n", iRet );
-        fprintf( stderr, "[WARN] Increase the stack size to PTHREAD_STACK_MIN.\n" );
+        fprintf( stderr,
+                 "[WARN] pthread_attr_setstacksize failed with return value: %d. Default stack will be used.\n",
+                 iRet );
     }
 
     thread->ev = event_create();
@@ -164,10 +178,13 @@ portSTACK_TYPE * pxPortInitialiseStack( portSTACK_TYPE * pxTopOfStack,
 
     if( iRet != 0 )
     {
+        pthread_attr_destroy( &xThreadAttributes );
         prvFatalError( "pthread_create", iRet );
     }
 
     vPortExitCritical();
+
+    pthread_attr_destroy( &xThreadAttributes );
 
     return pxTopOfStack;
 }
