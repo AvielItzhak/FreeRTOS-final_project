@@ -11,6 +11,16 @@
 
 #include "Server/Server_Task.h"
 
+// Priorities:
+#define HIGH_PRIORITY      4
+#define MEDIUM_PRIORITY    3
+#define NORMAL_PRIORITY    2
+#define LOW_PRIORITY       1
+
+// Task Handles:
+TaskHandle_t xServerEventGenTaskHandle = NULL;
+
+
 int main(void)
 {
     printf("MAIN: start\n");
@@ -18,22 +28,28 @@ int main(void)
     init_main();
     printf("MAIN: after init_main\n");
 
-    /* Create Server task only */
-    BaseType_t rc = xTaskCreate(
-        vServerTask,
-        "Server_Gen",
-        2048,
-        NULL,
-        2,
-        NULL
-    );
+    /* ---------- Tasks Creation --------- */
 
-    printf("MAIN: xTaskCreate(Server) = %ld\n", (long)rc);
+    // Create Server Task
+    if ((xTaskCreate( vServerEventGen, "Server_Event_Gen",configMINIMAL_STACK_SIZE, 
+                     NULL, NORMAL_PRIORITY, &xServerEventGenTaskHandle) != pdPASS))
+    { // Error
+        printf("MAIN: xTaskCreate(ServerTask) Failed!\n");
+        return -1;
+    }
+    else { printf("MAIN: xTaskCreate(ServerTask) Successful\n"); } // Success print
 
-    printf("MAIN: starting scheduler\n");
+    
+    
+
+    // Start the scheduler
+    printf("MAIN: starting scheduler\n--------------------------------\n\n");
     vTaskStartScheduler();
 
-    /* Should never reach here */
-    printf("MAIN: scheduler returned (unexpected)\n");
+
+    /* Should never reach here! - Print & Endless Loop */
+    printf("\n\nMAIN: scheduler returned (unexpected)\n");
+    while (1) {}
+    
     return 0;
 }
