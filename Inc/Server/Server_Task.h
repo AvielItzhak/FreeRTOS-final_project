@@ -12,6 +12,6 @@
  * 
  * @param pvParameters (currently unused)
  */
-void vServerEventGen(void *pvParameters); 
+void Task_EventGenerator(void *pvParameters); 
 
 #endif

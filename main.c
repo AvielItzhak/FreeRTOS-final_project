@@ -11,29 +11,29 @@
 
 #include "Server/Server_Task.h"
 
-// Priorities:
+// Priorities: 
 #define HIGH_PRIORITY      4
 #define MEDIUM_PRIORITY    3
 #define NORMAL_PRIORITY    2
 #define LOW_PRIORITY       1
 
 // Task Handles:
-TaskHandle_t xServerEventGenTaskHandle = NULL;
+TaskHandle_t xServerEventGenTaskHandle = NULL; // Server Event Generator Task Handle
 
 
 int main(void)
 {
     printf("MAIN: start\n");
 
-    init_main();
+    init_main(); // System Initialization
     printf("MAIN: after init_main\n");
 
     /* ---------- Tasks Creation --------- */
 
-    // Create Server Task
-    if ((xTaskCreate( vServerEventGen, "Server_Event_Gen",configMINIMAL_STACK_SIZE, 
+    /* Create Server Task */
+    if ((xTaskCreate( Task_EventGenerator, "Server_Event_Gen",configMINIMAL_STACK_SIZE, 
                      NULL, NORMAL_PRIORITY, &xServerEventGenTaskHandle) != pdPASS))
-    { // Error
+    { // Failed to create task
         printf("MAIN: xTaskCreate(ServerTask) Failed!\n");
         return -1;
     }
@@ -42,7 +42,7 @@ int main(void)
     
     
 
-    // Start the scheduler
+    /* Start Scheduler */
     printf("MAIN: starting scheduler\n--------------------------------\n\n");
     vTaskStartScheduler();
 

@@ -15,7 +15,7 @@
 
 #include "Server/DataBase.h" // Database functions
 
-void vServerEventGen(void *pvParameters)
+void Task_EventGenerator(void *pvParameters)
 {
     (void)pvParameters;
 
