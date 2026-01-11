@@ -74,8 +74,10 @@ VPATH = $(sort $(dir $(SOURCE_FILES))) # to help make find source files in their
 
 CFLAGS                :=    -ggdb3
 LDFLAGS               :=    -ggdb3 -pthread
+LDLIBS                :=    -lsqlite3       # link with sqlite3 library
 CPPFLAGS              :=    $(INCLUDE_DIRS) -DBUILD_DIR=\"$(BUILD_DIR_ABS)\"
 CPPFLAGS              +=    -D_WINDOWS_
+
 
 ifeq ($(TRACE_ON_ENTER),1)
   CPPFLAGS              += -DTRACE_ON_ENTER=1
@@ -124,9 +126,11 @@ DEP_FILE = $(OBJ_FILES:%.o=%.d)
 
 ${BIN} : $(BUILD_DIR)/$(BIN)
 
-${BUILD_DIR}/${BIN} : ${OBJ_FILES}
+${BUILD_DIR}/${BIN} : ${OBJ_FILES} # added LDLIBS for sqlite3
 	-mkdir -p ${@D}
-	$(CC) $^ ${LDFLAGS} -o $@
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+
 
 -include ${DEP_FILE}
 
@@ -142,8 +146,5 @@ clean:
 	-rm -rf $(BUILD_DIR)
 
 
-GPROF_OPTIONS := --directory-path=$(INCLUDE_DIRS)
-profile:
-	gprof -a -p --all-lines $(GPROF_OPTIONS) $(BUILD_DIR)/$(BIN) $(BUILD_DIR)/gmon.out > $(BUILD_DIR)/prof_flat.txt
-	gprof -a --graph $(GPROF_OPTIONS) $(BUILD_DIR)/$(BIN) $(BUILD_DIR)/gmon.out > $(BUILD_DIR)/prof_call_graph.txt
+GPROF_OPTIONS := 
 
