@@ -1,5 +1,4 @@
-build/Server_Task.o: Src/Server/Server_Task.c Inc/Server/Server_Task.h \
- Inc/Shared_Configuration.h \
+build/Database.o: Src/Server/Database.c Inc/Server/DataBase.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/FreeRTOS.h \
  core/include/FreeRTOSConfig.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/Include/trcRecorder.h \
@@ -15,10 +14,10 @@ build/Server_Task.o: Src/Server/Server_Task.c Inc/Server/Server_Task.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/deprecated_definitions.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/portable/ThirdParty/GCC/Posix/portmacro.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/mpu_wrappers.h \
- /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
- /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/list.h \
- /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
- /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/semphr.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
- Inc/Server/DataBase.h
+ /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
+ /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/list.h \
+ Inc/Shared_Configuration.h \
+ /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
+ /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h

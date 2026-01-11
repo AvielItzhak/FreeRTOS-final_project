@@ -4,9 +4,14 @@
 #include "Shared_Configuration.h"
 
 #define MAX_PRIORITY_LEVEL 3U
+#define EVENT_GENERATION_INTERVAL_MS 5000U
 
 
-
-void vServerEventGen(void *pvParameters); // Task to generate random emergency events every 5 seconds
+/**
+ * @brief Task function that generates random emergency events and stores them in the SQLite database.
+ * 
+ * @param pvParameters (currently unused)
+ */
+void vServerEventGen(void *pvParameters); 
 
 #endif
