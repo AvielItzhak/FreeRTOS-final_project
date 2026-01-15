@@ -23,33 +23,38 @@ TaskHandle_t xServerEventGenTaskHandle = NULL; // Server Event Generator Task Ha
 
 int main(void)
 {
-    printf("MAIN: start\n");
+    printf("[MAIN] Start Main program\n");
 
     init_main(); // System Initialization
-    printf("MAIN: after init_main\n");
+    printf("[MAIN] System initialized\n");
 
-    /* ---------- Tasks Creation --------- */
+    /* --------Tasks Creation---------- */
 
     /* Create Server Task */
     if ((xTaskCreate( Task_EventGenerator, "Server_Event_Gen",configMINIMAL_STACK_SIZE, 
                      NULL, NORMAL_PRIORITY, &xServerEventGenTaskHandle) != pdPASS))
     { // Failed to create task
-        printf("MAIN: xTaskCreate(ServerTask) Failed!\n");
+        printf("[MAIN] xTaskCreate(ServerTask) Failed!\n");
         return -1;
     }
-    else { printf("MAIN: xTaskCreate(ServerTask) Successful\n"); } // Success print
+    else { printf("[MAIN] xTaskCreate(ServerTask) Successful\n"); } // Success print
 
-    
-    
+
+    /* Create Server <--> Client MSG Queues */
+    BaseType_t Queues_Check = CreateQueues();
+    if (Queues_Check != pdPASS) {
+        printf("[MAIN] Failed to create queues\n");
+        return -2;
+    }
 
     /* Start Scheduler */
-    printf("MAIN: starting scheduler\n--------------------------------\n\n");
+    printf("[MAIN] starting scheduler\n--------------------------------\n\n");
     vTaskStartScheduler();
 
 
     /* Should never reach here! - Print & Endless Loop */
-    printf("\n\nMAIN: scheduler returned (unexpected)\n");
-    while (1) {}
+    printf("\n\n[MAIN] Scheduler returned - Unexpected Error\n");
+    while (1) {} // Endless loop
     
-    return 0;
+    return 100; // Return 100 on unexpected exit
 }
