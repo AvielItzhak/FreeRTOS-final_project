@@ -30,6 +30,7 @@ int ServerUDP_GetSocket(void);
 /**
  * @brief This task handles transmitting EmergencyEvent_t messages via UDP from the server to the client.
  *        It receives messages from a queue and sends them over the network.
+ *        Also, updates the database upon receiving completion messages.
  * 
  * @attention This task should be created after ServerUDP_Init() is called.
  * @param pvParameters - Not used

@@ -80,9 +80,28 @@ void vClientUDPRxTask(void *pvParameters)
         if (n == (ssize_t)sizeof(event)) {
             (void)xQueueSend(handle_clientUDPRxQ, &event, 0);
             printf("[Client][UDP-RX] Got event id=%u\n", (unsigned)event.eventID);
-        } else {
-            vTaskDelay(pdMS_TO_TICKS(10)); // No valid message, short delay to avoid busy waiting on error
+            continue; // Continue to next iteration
         }
+
+        /* Check for errors */
+        if (n < 0) { 
+            /* Importany to check errno for EINTR and EAGAIN & EWOULDBLOCK */
+            if (errno == EINTR) { // Ignore EINTR (very common in FreeRTOS POSIX demo)
+                continue;
+            }
+            if (errno == EAGAIN || errno == EWOULDBLOCK) { // Ignore EAGAIN and EWOULDBLOCK
+                vTaskDelay(pdMS_TO_TICKS(10));
+                continue;
+            }
+
+            printf("[Client][UDP-RX] recvfrom failed: %s\n", strerror(errno));
+            vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to avoid busy waiting
+            continue;
+        }
+
+        /* if n >= 0 but still invalid size */
+        printf("[Client][UDP-RX] invalid datagram size=%ld\n", (long)n);
+        vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to avoid busy waiting
     }
 
     vTaskDelete(NULL); // Delete and free resources - Should never reach here
