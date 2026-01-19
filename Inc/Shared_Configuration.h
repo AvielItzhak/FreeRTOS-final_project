@@ -22,6 +22,16 @@
 #include "queue.h"
 #include "semphr.h"
 
+
+/* -------UDP Setup------- */
+
+#define UDP_IP_Addr          "127.0.0.1" // Loopback IP 
+#define UDP_SERVER_PORT      5000   // Server PORT 
+#define UDP_CLIENT_PORT      5001   // Client PORT
+
+
+/* --------Data Structures------- */
+
 /* Event types */
 typedef enum {
     EVENT_AMBULANCE = 0,
@@ -51,20 +61,29 @@ typedef struct {
 } CompletionMsg_t;
 
 
-/* Queues (Server <-> Client) lengths */
+/* --------Queue Definitions------- */
+
+/* Queues (Server <-> Client) sizes */
 #define SERVER_UDP_TX_LEN   16
 #define SERVER_UDP_RX_LEN   16
 #define CLIENT_UDP_RX_LEN   16
 #define CLIENT_UDP_TX_LEN   16
 
 /* Queue handles - extern in order to use in both server and client */
-extern QueueHandle_t handle_serverUdpTxQ;  /* use for EmergencyEvent_t */
-extern QueueHandle_t handle_serverUdpRxQ;  /* use for CompletionMsg_t  */
-extern QueueHandle_t handle_clientUdpRxQ;  /* use for EmergencyEvent_t */
-extern QueueHandle_t handle_clientUdpTxQ;  /* use for CompletionMsg_t  */
+extern QueueHandle_t handle_serverUDPTxQ;  /* use for EmergencyEvent_t */
+extern QueueHandle_t handle_serverUDPRxQ;  /* use for CompletionMsg_t  */
+extern QueueHandle_t handle_clientUDPRxQ;  /* use for EmergencyEvent_t */
+extern QueueHandle_t handle_clientUDPTxQ;  /* use for CompletionMsg_t  */
 
 /* Create all queues */
 BaseType_t CreateQueues(void);
 
+
+/* ------UDP Tasks definitions------ */
+
+void vServerUDPTxTask(void *pvParameters); // Server UDP TX Task
+void vServerUDPRxTask(void *pvParameters); // Server UDP RX Task
+void vClientUDPRxTask(void *pvParameters); // Client UDP RX Task
+void vClientUDPTxTask(void *pvParameters); // Client UDP TX Task
 
 #endif // SHARED_CONFIGURATION_H

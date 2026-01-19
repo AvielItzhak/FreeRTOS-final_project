@@ -19,7 +19,7 @@ void Task_EventGenerator(void *pvParameters)
 {
     (void)pvParameters;
 
-    Db_InitOnce();
+    Db_Init();
 
     /* Seed rand() once so each RUN offers random results */
     static int seeded = 0; // Static variable to track if seeded
@@ -48,7 +48,7 @@ void Task_EventGenerator(void *pvParameters)
         xNewEvent.timestampStart = (uint32_t)now; // Set start timestamp
 
         Db_InsertEventPending(&xNewEvent); // Insert the new event into the database
-
+        
         /* Print the generated event details */
         printf("[Server] Generated: ID=%u Type=%d Priority=%u Location='%s' Time=%lusec\n",
                (unsigned)xNewEvent.eventID,
@@ -56,7 +56,18 @@ void Task_EventGenerator(void *pvParameters)
                (unsigned)xNewEvent.priority,
                xNewEvent.location,
                (unsigned long)(now / 1000U));
+        
+
+        /* Send the event to the UDP TX queue */
+        if (xQueueSend(handle_serverUDPTxQ, &xNewEvent, pdMS_TO_TICKS(50)) != pdPASS) {
+            printf("[Server] WARN: UDP-TX queue full, drop event id=%u\n", (unsigned)xNewEvent.eventID);
+        }
+        printf("[Server] Enqueued event id=%u to UDP-TX\n", (unsigned)xNewEvent.eventID);
+
 
         vTaskDelay(pdMS_TO_TICKS(EVENT_GENERATION_INTERVAL_MS)); // Delay before generating the next event
     }
+
+    vTaskDelete(NULL); // Delete and free resources - Should never reach here
 }
+

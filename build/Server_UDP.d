@@ -1,4 +1,4 @@
-build/main.o: main.c core/Init_main/init.h \
+build/Server_UDP.o: Src/Server/Server_UDP.c Inc/Shared_Configuration.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/FreeRTOS.h \
  core/include/FreeRTOSConfig.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/Include/trcRecorder.h \
@@ -14,13 +14,10 @@ build/main.o: main.c core/Init_main/init.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/deprecated_definitions.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/portable/ThirdParty/GCC/Posix/portmacro.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/mpu_wrappers.h \
- core/include/main_config.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/list.h \
- core/include/console.h \
- /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/semphr.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
- Inc/Server/Server_Task.h Inc/Shared_Configuration.h \
+ /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/semphr.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
- Inc/Server/Server_UDP.h Inc/Client/Client_UDP.h
+ Inc/Server/Server_UDP.h Inc/Server/DataBase.h
