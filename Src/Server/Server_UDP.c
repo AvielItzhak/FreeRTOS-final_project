@@ -130,21 +130,22 @@ void vServerUDPRxTask(void *pvParameters)
         if (n < 0) { 
             /* Importany to check errno for EINTR and EAGAIN & EWOULDBLOCK */
             if (errno == EINTR) { // Ignore EINTR (very common in FreeRTOS POSIX demo)
+                vTaskDelay(pdMS_TO_TICKS(1)); // Delay to avoid nonstop loop
                 continue;
             }
             if (errno == EAGAIN || errno == EWOULDBLOCK) { // Ignore EAGAIN and EWOULDBLOCK
-                vTaskDelay(pdMS_TO_TICKS(10));
+                vTaskDelay(pdMS_TO_TICKS(Short_Delay_MS));
                 continue;
             }
 
             printf("[Server][UDP-RX] recvfrom failed: %s\n", strerror(errno));
-            vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to avoid busy waiting
+            vTaskDelay(pdMS_TO_TICKS(Short_Delay_MS)); // Short delay to avoid busy waiting
             continue;
         }
 
         /* if n >= 0 but still invalid size */
         printf("[Server][UDP-RX] invalid datagram size=%ld\n", (long)n);
-        vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to avoid busy waiting
+        vTaskDelay(pdMS_TO_TICKS(Short_Delay_MS)); // Short delay to avoid busy waiting
     }
 
     vTaskDelete(NULL); // Delete and free resources - Should never reach here

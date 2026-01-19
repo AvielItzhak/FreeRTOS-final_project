@@ -78,8 +78,13 @@ void vClientUDPRxTask(void *pvParameters)
 
         /* Check if the received data matches the expected size */
         if (n == (ssize_t)sizeof(event)) {
-            (void)xQueueSend(handle_clientUDPRxQ, &event, 0);
-            printf("[Client][UDP-RX] Got event id=%u\n", (unsigned)event.eventID);
+            BaseType_t queueCheck = xQueueSend(handle_clientUDPRxQ, &event, 0);
+            if (queueCheck != pdPASS) {
+                printf("[Client][UDP-RX] DROP id=%u (RX queue full)\n", (unsigned)event.eventID);
+            } else {
+                printf("[Client][UDP-RX] Enqueued id=%u type=%d\n",
+                       (unsigned)event.eventID, (int)event.type);
+            }
             continue; // Continue to next iteration
         }
 
@@ -87,21 +92,22 @@ void vClientUDPRxTask(void *pvParameters)
         if (n < 0) { 
             /* Importany to check errno for EINTR and EAGAIN & EWOULDBLOCK */
             if (errno == EINTR) { // Ignore EINTR (very common in FreeRTOS POSIX demo)
+                vTaskDelay(pdMS_TO_TICKS(1)); // Delay to avoid nonstop loop
                 continue;
             }
             if (errno == EAGAIN || errno == EWOULDBLOCK) { // Ignore EAGAIN and EWOULDBLOCK
-                vTaskDelay(pdMS_TO_TICKS(10));
+                vTaskDelay(pdMS_TO_TICKS(Short_Delay_MS));
                 continue;
             }
 
             printf("[Client][UDP-RX] recvfrom failed: %s\n", strerror(errno));
-            vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to avoid busy waiting
+            vTaskDelay(pdMS_TO_TICKS(Short_Delay_MS)); // Short delay to avoid busy waiting
             continue;
         }
 
         /* if n >= 0 but still invalid size */
         printf("[Client][UDP-RX] invalid datagram size=%ld\n", (long)n);
-        vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to avoid busy waiting
+        vTaskDelay(pdMS_TO_TICKS(Short_Delay_MS)); // Short delay to avoid busy waiting
     }
 
     vTaskDelete(NULL); // Delete and free resources - Should never reach here
@@ -157,7 +163,7 @@ void vClientEchoTask(void *pvParameters)
             ComMSG.eventID = event.eventID; // Same event ID as received
             snprintf(ComMSG.handledBy, sizeof(ComMSG.handledBy), "ECHO"); // Mark as handled by ECHO
             ComMSG.timestampEnd = (uint32_t)xTaskGetTickCount(); // Current tick count as end timestamp
-            ComMSG.status = (rand() % 100 < 50) ? 1 : 0; // Creating 50% success using random number
+            ComMSG.status = (rand() % 1000 < 50) ? 1 : 0; // Creating 50% success using random number
 
 
             (void)xQueueSend(handle_clientUDPTxQ, &ComMSG, 0); // Send to TX queue

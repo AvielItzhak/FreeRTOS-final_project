@@ -23,4 +23,5 @@ build/main.o: main.c core/Init_main/init.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
  Inc/Server/Server_Task.h Inc/Shared_Configuration.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
- Inc/Server/Server_UDP.h Inc/Client/Client_UDP.h
+ Inc/Server/Server_UDP.h Inc/Client/Client_UDP.h \
+ Inc/Client/Dispatcher_Task.h Inc/Client/Vehicle_Task.h

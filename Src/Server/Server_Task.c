@@ -59,7 +59,7 @@ void Task_EventGenerator(void *pvParameters)
         
 
         /* Send the event to the UDP TX queue */
-        if (xQueueSend(handle_serverUDPTxQ, &xNewEvent, pdMS_TO_TICKS(50)) != pdPASS) {
+        if (xQueueSend(handle_serverUDPTxQ, &xNewEvent, pdMS_TO_TICKS(Medium_Delay_MS)) != pdPASS) {
             printf("[Server] WARN: UDP-TX queue full, drop event id=%u\n", (unsigned)xNewEvent.eventID);
         }
         printf("[Server] Enqueued event id=%u to UDP-TX\n", (unsigned)xNewEvent.eventID);
