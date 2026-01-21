@@ -27,8 +27,8 @@ void Task_TestVehicle(void *pvParameters)
             printf("[Client][VEHICLE] Handling event id=%u type=%d\n",
                    (unsigned)event.eventID, (int)event.type);
 
-            /* Simulate handling the event (e.g., delay based on priority) */
-            vTaskDelay(pdMS_TO_TICKS(Long_Delay_MS)); // Simulated handling time
+            /* Simulate handling the event - Very long delay */
+            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -68,8 +68,8 @@ void Task_Ambulance_X(void *pvParameters)
             printf("[Client][AMBULANCE] Handling event id=%u type=%d\n",
                    (unsigned)event.eventID, (int)event.type);
 
-            /* Simulate handling the event (e.g., delay based on priority) */
-            vTaskDelay(pdMS_TO_TICKS(Long_Delay_MS)); // Simulated handling time
+            /* Simulate handling the event - Very long delay */
+            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -109,8 +109,8 @@ void Task_Police_X(void *pvParameters)
             printf("[Client][POLICE] Handling event id=%u type=%d\n",
                    (unsigned)event.eventID, (int)event.type);
 
-            /* Simulate handling the event (e.g., delay based on priority) */
-            vTaskDelay(pdMS_TO_TICKS(Long_Delay_MS)); // Simulated handling time
+            /* Simulate handling the event - Very long delay */
+            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -150,8 +150,8 @@ void Task_Fire_X(void *pvParameters)
             printf("[Client][FIRE] Handling event id=%u type=%d\n",
                    (unsigned)event.eventID, (int)event.type);
 
-            /* Simulate handling the event (e.g., delay based on priority) */
-            vTaskDelay(pdMS_TO_TICKS(Long_Delay_MS)); // Simulated handling time
+            /* Simulate handling the event - Very long delay */
+            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -191,8 +191,8 @@ void Task_Maintenance_X(void *pvParameters)
             printf("[Client][MAINTENANCE] Handling event id=%u type=%d\n",
                    (unsigned)event.eventID, (int)event.type);
 
-            /* Simulate handling the event (e.g., delay based on priority) */
-            vTaskDelay(pdMS_TO_TICKS(Long_Delay_MS)); // Simulated handling time
+            /* Simulate handling the event - Very long delay */
+            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -232,8 +232,8 @@ void Task_Waste_X(void *pvParameters)
             printf("[Client][WASTE] Handling event id=%u type=%d\n",
                    (unsigned)event.eventID, (int)event.type);
 
-            /* Simulate handling the event (e.g., delay based on priority) */
-            vTaskDelay(pdMS_TO_TICKS(Long_Delay_MS)); // Simulated handling time
+            /* Simulate handling the event - Very long delay */
+            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -273,8 +273,8 @@ void Task_Electricity_X(void *pvParameters)
             printf("[Client][ELECTRICITY] Handling event id=%u type=%d\n",
                    (unsigned)event.eventID, (int)event.type);
 
-            /* Simulate handling the event (e.g., delay based on priority) */
-            vTaskDelay(pdMS_TO_TICKS(Long_Delay_MS)); // Simulated handling time
+            /* Simulate handling the event - Very long delay */
+            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;

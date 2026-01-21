@@ -45,14 +45,15 @@ void Db_Init(void)
     /* Setting up the database schema */
     const char *sql =
         "CREATE TABLE IF NOT EXISTS events ("
-        " event_id     INTEGER PRIMARY KEY,"
-        " event_type   INTEGER NOT NULL,"
-        " priority     INTEGER NOT NULL,"
-        " location     TEXT    NOT NULL,"
-        " ts_start     INTEGER NOT NULL,"
-        " ts_end       INTEGER,"
-        " handled_by   TEXT,"
-        " status       INTEGER NOT NULL"
+        " event_id      INTEGER PRIMARY KEY,"
+        " event_type    INTEGER NOT NULL,"
+        " event_detail  TEXT,"
+        " priority      INTEGER NOT NULL,"
+        " location      TEXT    NOT NULL,"
+        " ts_start      INTEGER NOT NULL,"
+        " ts_end        INTEGER,"
+        " handled_by    TEXT,"
+        " status        INTEGER NOT NULL"
         ");";
 
     /* Execute the schema creation SQL */
@@ -99,8 +100,8 @@ void Db_InsertEventPending(const EmergencyEvent_t *event)
 
     /* Create the SQL statement for inserting an event */
     const char *sql =
-        "INSERT INTO events(event_id, event_type, priority, location, ts_start, ts_end, handled_by, status) "
-        "VALUES(?,?,?,?,?,NULL,NULL,?);";
+    "INSERT INTO events(event_id, event_type, event_detail, priority, location, ts_start, ts_end, handled_by, status) "
+    "VALUES(?,?,?,?,?,?,NULL,NULL,?);";
 
     sqlite3_stmt *stmt = NULL; // Prepared statement initialization
 
@@ -109,10 +110,11 @@ void Db_InsertEventPending(const EmergencyEvent_t *event)
     if (sqlite3_prepare_v2(handle_db, sql, -1, &stmt, NULL) == SQLITE_OK) {
         sqlite3_bind_int(stmt, 1, (int)event->eventID);
         sqlite3_bind_int(stmt, 2, (int)event->type);
-        sqlite3_bind_int(stmt, 3, (int)event->priority);
-        sqlite3_bind_text(stmt, 4, event->location, -1, SQLITE_TRANSIENT);
-        sqlite3_bind_int(stmt, 5, (int)event->timestampStart);
-        sqlite3_bind_int(stmt, 6, STATUS_PENDING);
+        sqlite3_bind_text(stmt, 3, event->event_detail, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 4, (int)event->priority);
+        sqlite3_bind_text(stmt, 5, event->location, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 6, (int)event->timestampStart);
+        sqlite3_bind_int(stmt, 7, STATUS_PENDING);
 
         if (sqlite3_step(stmt) != SQLITE_DONE) { // Execution failed
             printf("[DB] insert failed (id=%u): %s\n",

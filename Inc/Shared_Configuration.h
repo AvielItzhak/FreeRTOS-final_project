@@ -6,6 +6,7 @@
  *        Also, it defines the queue handles for inter-task communication (UDP & Dispatcher to Departments).
  * 
  * @attention This file is used by both server and client modules.
+ * @attention On top of the project requirements - additional fields and structures were added for better functionality.
  */
 
 #ifndef SHARED_CONFIGURATION_H
@@ -24,9 +25,10 @@
 
 /* -------Global Delay Definitions------ */
 
-#define Short_Delay_MS     10   // 10 ms
-#define Medium_Delay_MS    100  // 100 ms
-#define Long_Delay_MS      500  // 500 ms
+#define Short_Delay_MS             10   // 10 ms
+#define Medium_Delay_MS            100  // 100 ms
+#define Long_Delay_MS              500  // 500 ms
+#define EventHandling_Delay_MS     10000 // 10000 ms
 
 /* -------UDP Setup------- */
 
@@ -51,8 +53,9 @@ typedef enum {
 /* Structure for emergency event from server to client */
 typedef struct {
     uint32_t eventID;
-    EventType_t type;
-    uint8_t priority;
+    EventType_t type; // EventType_t enum (1=Ambulance, 2=Police, etc.)
+    char event_detail[64]; // Detailed event description - New field added!
+    uint8_t priority; // 1=Low, 2=Medium, 3=High
     char location[32];
     uint32_t timestampStart;
 } EmergencyEvent_t;
@@ -60,7 +63,7 @@ typedef struct {
 /* Structure for completion message from client to server */
 typedef struct {
     uint32_t eventID;
-    char handledBy[16];
+    char handledBy[16]; // Department that handled the event
     uint32_t timestampEnd;
     uint8_t status; // 1 = Success, 0 = Failed
 } CompletionMsg_t;
