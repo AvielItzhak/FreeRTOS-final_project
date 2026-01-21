@@ -25,46 +25,43 @@
 const EventCatalogItem_t eventCatalog[] = {
 
     /* Ambulance */
-    { EVENT_AMBULANCE, 3, "Severe traffic accident" },
-    { EVENT_AMBULANCE, 3, "Heart attack patient" },
-    { EVENT_AMBULANCE, 2, "Minor accident" },
-    { EVENT_AMBULANCE, 1, "Minor injury" },
-    { EVENT_AMBULANCE, 3, "Emergency in public building" },
-
+    { EVENT_AMBULANCE, HIGH_EVENT_PRIORITY_LEVEL, "Severe traffic accident", 60},
+    { EVENT_AMBULANCE, HIGH_EVENT_PRIORITY_LEVEL, "Heart attack patient", 40},
+    { EVENT_AMBULANCE, MEDIUM_EVENT_PRIORITY_LEVEL, "Minor accident", 10},
+    { EVENT_AMBULANCE, LOW_EVENT_PRIORITY_LEVEL, "Minor injury", 5},
+    { EVENT_AMBULANCE, HIGH_EVENT_PRIORITY_LEVEL, "Emergency in public building", 25},
     /* Police */
-    { EVENT_POLICE, 2, "Illegal gathering" },
-    { EVENT_POLICE, 3, "Home burglary" },
-    { EVENT_POLICE, 1, "Traffic violation" },
-    { EVENT_POLICE, 3, "Violence incident" },
-    { EVENT_POLICE, 2, "City emergency assistance" },
-
+    { EVENT_POLICE, MEDIUM_EVENT_PRIORITY_LEVEL, "Illegal gathering", 15},
+    { EVENT_POLICE, HIGH_EVENT_PRIORITY_LEVEL, "Home burglary", 20},
+    { EVENT_POLICE, LOW_EVENT_PRIORITY_LEVEL, "Traffic violation", 5},
+    { EVENT_POLICE, HIGH_EVENT_PRIORITY_LEVEL, "Violence incident", 25},
+    { EVENT_POLICE, MEDIUM_EVENT_PRIORITY_LEVEL, "City emergency assistance", 20},
     /* Fire */
-    { EVENT_FIRE_DEPARTMENT, 3, "Restaurant fire" },
-    { EVENT_FIRE_DEPARTMENT, 3, "Residential house fire" },
-    { EVENT_FIRE_DEPARTMENT, 2, "Vehicle fire" },
-    { EVENT_FIRE_DEPARTMENT, 2, "Suspicious smoke" },
-    { EVENT_FIRE_DEPARTMENT, 1, "Open field fire" },
+    { EVENT_FIRE_DEPARTMENT, HIGH_EVENT_PRIORITY_LEVEL, "Restaurant fire", 50},
+    { EVENT_FIRE_DEPARTMENT, HIGH_EVENT_PRIORITY_LEVEL, "Residential house fire", 70},
+    { EVENT_FIRE_DEPARTMENT, MEDIUM_EVENT_PRIORITY_LEVEL, "Vehicle fire", 15},
+    { EVENT_FIRE_DEPARTMENT, MEDIUM_EVENT_PRIORITY_LEVEL, "Suspicious smoke", 10},
+    { EVENT_FIRE_DEPARTMENT, LOW_EVENT_PRIORITY_LEVEL, "Open field fire", 5},
 
     /* Maintenance */
-    { EVENT_MAINTENANCE, 2, "Sidewalk repair" },
-    { EVENT_MAINTENANCE, 3, "Water pipe leak" },
-    { EVENT_MAINTENANCE, 1, "Routine public building maintenance" },
-    { EVENT_MAINTENANCE, 2, "Dangerous sewer openings" },
-    { EVENT_MAINTENANCE, 3, "Roof leak issue" },
-
+    { EVENT_MAINTENANCE, MEDIUM_EVENT_PRIORITY_LEVEL, "Sidewalk repair", 60},
+    { EVENT_MAINTENANCE, HIGH_EVENT_PRIORITY_LEVEL, "Water pipe leak", 50},
+    { EVENT_MAINTENANCE, LOW_EVENT_PRIORITY_LEVEL, "Routine public building maintenance", 10},
+    { EVENT_MAINTENANCE, MEDIUM_EVENT_PRIORITY_LEVEL, "Dangerous sewer openings", 15},
+    { EVENT_MAINTENANCE, HIGH_EVENT_PRIORITY_LEVEL, "Roof leak issue", 25},
     /* Waste */
-    { EVENT_WASTE_COLLECTION, 2, "Full neighborhood bins" },
-    { EVENT_WASTE_COLLECTION, 3, "Hazardous waste collection" },
-    { EVENT_WASTE_COLLECTION, 1, "Regular bin collection" },
-    { EVENT_WASTE_COLLECTION, 3, "Large public waste removal" },
-    { EVENT_WASTE_COLLECTION, 2, "Uncollected paper bins from commerce" },
+    { EVENT_WASTE_COLLECTION, MEDIUM_EVENT_PRIORITY_LEVEL, "Full neighborhood bins", 60},
+    { EVENT_WASTE_COLLECTION, HIGH_EVENT_PRIORITY_LEVEL, "Hazardous waste collection", 90},
+    { EVENT_WASTE_COLLECTION, LOW_EVENT_PRIORITY_LEVEL, "Regular bin collection", 15},
+    { EVENT_WASTE_COLLECTION, HIGH_EVENT_PRIORITY_LEVEL, "Large public waste removal", 25},
+    { EVENT_WASTE_COLLECTION, MEDIUM_EVENT_PRIORITY_LEVEL, "Uncollected paper bins from commerce", 15},
 
     /* Electricity */
-    { EVENT_ELECTRICITY, 1, "Streetlight failure" },
-    { EVENT_ELECTRICITY, 3, "Neighborhood power outage" },
-    { EVENT_ELECTRICITY, 2, "Power off in public building" },
-    { EVENT_ELECTRICITY, 3, "Overload in power network" },
-    { EVENT_ELECTRICITY, 2, "Traffic light signaling failure" },
+    { EVENT_ELECTRICITY, LOW_EVENT_PRIORITY_LEVEL, "Streetlight failure", 15},
+    { EVENT_ELECTRICITY, HIGH_EVENT_PRIORITY_LEVEL, "Neighborhood power outage", 30},
+    { EVENT_ELECTRICITY, MEDIUM_EVENT_PRIORITY_LEVEL, "Power off in public building", 15},
+    { EVENT_ELECTRICITY, HIGH_EVENT_PRIORITY_LEVEL, "Overload in power network", 60},
+    { EVENT_ELECTRICITY, MEDIUM_EVENT_PRIORITY_LEVEL, "Traffic light signaling failure", 20},
 };
 
 const uint32_t eventCatalogCount = (uint32_t)(sizeof(eventCatalog)/sizeof(eventCatalog[0])); // Number of items in the event catalog
@@ -102,6 +99,7 @@ void Task_EventGenerator(void *pvParameters)
         xNewEvent.type = randCatalogItem->type; // Set event type from catalog
         xNewEvent.priority = randCatalogItem->priority; // Set priority from catalog
         snprintf(xNewEvent.event_detail, sizeof(xNewEvent.event_detail), "%s", randCatalogItem->detail); // Set event detail from catalog
+        xNewEvent.delayFactor = randCatalogItem->delayFactor; // Set delay factor from catalog
 
         /* Generate a random location using snprintf */
         snprintf(xNewEvent.location, sizeof(xNewEvent.location),
@@ -113,10 +111,11 @@ void Task_EventGenerator(void *pvParameters)
         Db_InsertEventPending(&xNewEvent); // Insert the new event into the database
         
         /* Print the generated event details */
-        printf("[Server] Generated: ID=%u Type=%d EventDetail='%s' Location='%s' Time=%lusec\n",
+        printf("[Server] Generated: ID=%u Type=%d EventDetail='%s' handleTime=%lusec Location='%s' Time=%lusec\n",
                (unsigned)xNewEvent.eventID,
                (int)xNewEvent.type,
                xNewEvent.event_detail,
+               (unsigned long)(xNewEvent.delayFactor * baseEventHandling_Delay_MS / 1000U), // Handling time in seconds
                xNewEvent.location,
                (unsigned long)(now / 1000U));
         

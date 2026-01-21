@@ -25,10 +25,10 @@
 
 /* -------Global Delay Definitions------ */
 
-#define Short_Delay_MS             10   // 10 ms
-#define Medium_Delay_MS            100  // 100 ms
-#define Long_Delay_MS              500  // 500 ms
-#define EventHandling_Delay_MS     10000 // 10000 ms
+#define Short_Delay_MS                 10   // 10 ms
+#define Medium_Delay_MS                100  // 100 ms
+#define Long_Delay_MS                  500  // 500 ms
+#define baseEventHandling_Delay_MS     1000 // 1 second
 
 /* -------UDP Setup------- */
 
@@ -56,6 +56,7 @@ typedef struct {
     EventType_t type; // EventType_t enum (1=Ambulance, 2=Police, etc.)
     char event_detail[64]; // Detailed event description - New field added!
     uint8_t priority; // 1=Low, 2=Medium, 3=High
+    uint8_t delayFactor; // Delay factor for event handling simulation - New field added!
     char location[32];
     uint32_t timestampStart;
 } EmergencyEvent_t;

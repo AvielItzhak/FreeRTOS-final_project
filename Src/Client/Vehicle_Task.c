@@ -28,7 +28,7 @@ void Task_TestVehicle(void *pvParameters)
                    (unsigned)event.eventID, (int)event.type);
 
             /* Simulate handling the event - Very long delay */
-            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
+            vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -69,7 +69,7 @@ void Task_Ambulance_X(void *pvParameters)
                    (unsigned)event.eventID, (int)event.type);
 
             /* Simulate handling the event - Very long delay */
-            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
+            vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -110,7 +110,7 @@ void Task_Police_X(void *pvParameters)
                    (unsigned)event.eventID, (int)event.type);
 
             /* Simulate handling the event - Very long delay */
-            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
+            vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -151,7 +151,7 @@ void Task_Fire_X(void *pvParameters)
                    (unsigned)event.eventID, (int)event.type);
 
             /* Simulate handling the event - Very long delay */
-            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
+            vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -192,7 +192,7 @@ void Task_Maintenance_X(void *pvParameters)
                    (unsigned)event.eventID, (int)event.type);
 
             /* Simulate handling the event - Very long delay */
-            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
+            vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -233,7 +233,7 @@ void Task_Waste_X(void *pvParameters)
                    (unsigned)event.eventID, (int)event.type);
 
             /* Simulate handling the event - Very long delay */
-            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
+            vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
@@ -274,7 +274,7 @@ void Task_Electricity_X(void *pvParameters)
                    (unsigned)event.eventID, (int)event.type);
 
             /* Simulate handling the event - Very long delay */
-            vTaskDelay(pdMS_TO_TICKS(EventHandling_Delay_MS)); // Simulated handling time
+            vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
             /* Prepare completion message */
             CompletionMsg_t Msg;
