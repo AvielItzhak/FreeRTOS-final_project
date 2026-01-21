@@ -31,6 +31,7 @@ void Task_EventGenerator(void *pvParameters)
     uint32_t ulIDCounter = Db_GetNextEventId(); // Get starting event ID from DB
 
     printf("[Server] EventGen Started (next_id=%u)\n", (unsigned)ulIDCounter);
+    vTaskDelay(pdMS_TO_TICKS(Long_Delay_MS)); // Initial delay before starting event generation
 
     /* Main Loop to Generate events and insert them into the database */
     for (;;) {
@@ -62,7 +63,7 @@ void Task_EventGenerator(void *pvParameters)
         if (xQueueSend(handle_serverUDPTxQ, &xNewEvent, pdMS_TO_TICKS(Medium_Delay_MS)) != pdPASS) {
             printf("[Server] WARN: UDP-TX queue full, drop event id=%u\n", (unsigned)xNewEvent.eventID);
         }
-        printf("[Server] Enqueued event id=%u to UDP-TX\n", (unsigned)xNewEvent.eventID);
+        printf("[Server] Sent to queue event id=%u to UDP-TX\n", (unsigned)xNewEvent.eventID);
 
 
         vTaskDelay(pdMS_TO_TICKS(EVENT_GENERATION_INTERVAL_MS)); // Delay before generating the next event

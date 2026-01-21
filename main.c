@@ -88,14 +88,7 @@ int main(void)
     }
     else { printf("[MAIN] xTaskCreate(ClientUDP_RxTask) Successful\n"); } // Successful creation of Client UDP RX Task
 
-    /*if ((xTaskCreate( vClientEchoTask, "Client_UDP_Echo", configMINIMAL_STACK_SIZE,
-                     NULL, MEDIUM_PRIORITY, NULL) != pdPASS))
-    { 
-        printf("[MAIN] xTaskCreate(ClientUDP_Echo_Task) Failed!\n");
-        return -25;
-    }
-    else { printf("[MAIN] xTaskCreate(ClientUDP_Echo_Task) Successful\n"); } // Successful creation of Client UDP Echo Task
-
+   
     /* Create Server Event Generator Task */
     if ((xTaskCreate( Task_EventGenerator, "Server_Event_Gen",configMINIMAL_STACK_SIZE, 
                      NULL, HIGH_PRIORITY, &xServerEventGenTaskHandle) != pdPASS))
@@ -104,6 +97,7 @@ int main(void)
         return -26;
     }
     else { printf("[MAIN] xTaskCreate(ServerTask) Successful\n"); } // Successful creation of Server Event Generator Task
+
 
     /* Create Client Dispatcher Task */
     if ((xTaskCreate( Task_Dispatcher, "Client_Dispatcher", configMINIMAL_STACK_SIZE,
@@ -114,16 +108,59 @@ int main(void)
     }
     else { printf("[MAIN] xTaskCreate(ClientDispatcher_Task) Successful\n"); } // Successful creation of Client Dispatcher Task
 
-    /* Create Client Vehicle Task */
-    if ((xTaskCreate( Task_TestVehicle, "Client_Vehicle", configMINIMAL_STACK_SIZE,
-                     NULL, NORMAL_PRIORITY, NULL) != pdPASS))
-    { 
-        printf("[MAIN] xTaskCreate(ClientVehicle_Task) Failed!\n");
-        return -28;
-    }
-    else { printf("[MAIN] xTaskCreate(ClientVehicle_Task) Successful\n"); } // Successful creation of Client Vehicle Task
 
-    
+    /* Create Client Department Tasks */
+
+    if ((xTaskCreate( Task_Ambulance_X, "Client_Ambulance", configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, NULL) != pdPASS))
+    { 
+        printf("[MAIN] xTaskCreate(ClientAmbulance_Task) Failed!\n");
+        return -41;
+    }
+    else { printf("[MAIN] xTaskCreate(ClientAmbulance_Task) Successful\n"); } // Successful creation of Client Ambulance Task
+
+    if ((xTaskCreate( Task_Police_X, "Client_Police", configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, NULL) != pdPASS))
+    { 
+        printf("[MAIN] xTaskCreate(ClientPolice_Task) Failed!\n");
+        return -42;
+    }
+    else { printf("[MAIN] xTaskCreate(ClientPolice_Task) Successful\n"); } // Successful creation of Client Police Task
+
+    if ((xTaskCreate( Task_Fire_X, "Client_Fire", configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, NULL) != pdPASS))
+    { 
+        printf("[MAIN] xTaskCreate(ClientFire_Task) Failed!\n");
+        return -43;
+    }
+    else { printf("[MAIN] xTaskCreate(ClientFire_Task) Successful\n"); } // Successful creation of Client Fire Task
+
+    if ((xTaskCreate( Task_Maintenance_X, "Client_Maintenance", configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, NULL) != pdPASS))
+    { 
+        printf("[MAIN] xTaskCreate(ClientMaintenance_Task) Failed!\n");
+        return -44;
+    }
+    else { printf("[MAIN] xTaskCreate(ClientMaintenance_Task) Successful\n"); } // Successful creation of Client Maintenance Task
+
+    if ((xTaskCreate( Task_Waste_X, "Client_Waste", configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, NULL) != pdPASS))
+    { 
+        printf("[MAIN] xTaskCreate(ClientWaste_Task) Failed!\n");
+        return -45;
+    }
+    else { printf("[MAIN] xTaskCreate(ClientWaste_Task) Successful\n"); } // Successful creation of Client Waste Task
+
+    if ((xTaskCreate( Task_Electricity_X, "Client_Electricity", configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, NULL) != pdPASS))
+    { 
+        printf("[MAIN] xTaskCreate(ClientElectricity_Task) Failed!\n");
+        return -46;
+    }
+    else { printf("[MAIN] xTaskCreate(ClientElectricity_Task) Successful\n"); } // Successful creation of Client Electricity Task
+
+
+
     /* Start Scheduler */
     printf("\n[MAIN] starting scheduler\n--------------------------------\n");
     vTaskStartScheduler();
