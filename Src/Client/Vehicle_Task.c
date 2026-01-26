@@ -10,6 +10,20 @@
 
 #include <stdio.h>
 
+// Helper function to map EventType_t to corresponding department counting semaphore handle
+static SemaphoreHandle_t DeptSemFromType(EventType_t type)
+{
+    switch (type) {
+        case EVENT_AMBULANCE:        return handleSem_deptAmbulance;
+        case EVENT_POLICE:           return handleSem_deptPolice;
+        case EVENT_FIRE_DEPARTMENT:  return handleSem_deptFire;
+        case EVENT_MAINTENANCE:      return handleSem_deptMaint;
+        case EVENT_WASTE_COLLECTION: return handleSem_deptWaste;
+        case EVENT_ELECTRICITY:      return handleSem_deptElect;
+        default:                     return NULL;
+    }
+}
+
 
 
 void Task_TestVehicle(void *pvParameters)
@@ -24,8 +38,8 @@ void Task_TestVehicle(void *pvParameters)
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptAmbulanceQ, &event, portMAX_DELAY) == pdPASS) { // Using Ambulance queue for testing
-            printf("[Client][VEHICLE] Handling event id=%u type=%d\n",
-                   (unsigned)event.eventID, (int)event.type);
+            printf("[Client][VEHICLE] Handling event id=%u type=%d priority=%d\n",
+                   (unsigned)event.eventID, (int)event.type, (int)event.priority);
 
             /* Simulate handling the event - Very long delay */
             vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
@@ -57,7 +71,7 @@ void Task_Ambulance_X(void *pvParameters)
 {
     (void)pvParameters;
 
-    printf("[Client][AMBULANCE] Started\n");
+    printf("[Client][%s] Started\n",pcTaskGetName(NULL));
 
     /* Main loop for Ambulance -> Dispatcher communication */
     for (;;) {
@@ -65,8 +79,18 @@ void Task_Ambulance_X(void *pvParameters)
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptAmbulanceQ, &event, portMAX_DELAY) == pdPASS) { // Using Ambulance queue for testing
-            printf("[Client][AMBULANCE] Handling event id=%u type=%d\n",
-                   (unsigned)event.eventID, (int)event.type);
+
+            SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type); // Returns handleSem_deptAmbulance
+
+            /* Check if the semaphore handle is valid */
+            if (countSemaphore == NULL) {
+                printf("[Client][%s] ERROR: Semaphore handle is NULL\n", pcTaskGetName(NULL));
+                continue;
+            }
+            xSemaphoreTake(countSemaphore, portMAX_DELAY); // blocks if no vehicles available (counting semaphore)
+            
+            printf("[Client][%s] Handling event id=%u type=%d priority=%d\n",
+                   pcTaskGetName(NULL), (unsigned)event.eventID, (int)event.type, (int)event.priority);
 
             /* Simulate handling the event - Very long delay */
             vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
@@ -75,20 +99,23 @@ void Task_Ambulance_X(void *pvParameters)
             CompletionMsg_t Msg;
             Msg.eventID   = event.eventID;
             Msg.status    = 0; // Success
-            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "Ambulance");
+            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "%s", pcTaskGetName(NULL));
             Msg.timestampEnd = xTaskGetTickCount(); // Current tick count as end timestamp
 
             /* Send completion message to Client UDP TX queue */
             BaseType_t queueCheck = xQueueSend(handle_clientUDPTxQ, &Msg, 0);
             if (queueCheck != pdPASS) {
-                printf("[Client][AMBULANCE] Drop completion message id=%u (TX queue full)\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Drop completion message id=%u (TX queue full)\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
             else {
-                printf("[Client][AMBULANCE] Sent completion message id=%u\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Sent completion message id=%u\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
 
-            printf("[Client][AMBULANCE] Completed event id=%u\n", (unsigned)event.eventID);
+            printf("[Client][%s] Completed event id=%u\n", pcTaskGetName(NULL), (unsigned)event.eventID);
+
+            xSemaphoreGive(countSemaphore); // Release vehicle resource back
         }
+        
     }
 
     vTaskDelete(NULL); // Should never reach here
@@ -98,7 +125,7 @@ void Task_Police_X(void *pvParameters)
 {
     (void)pvParameters;
 
-    printf("[Client][POLICE] Started\n");
+    printf("[Client][%s] Started\n", pcTaskGetName(NULL));
 
     /* Main loop for Police -> Dispatcher communication */
     for (;;) {
@@ -106,9 +133,17 @@ void Task_Police_X(void *pvParameters)
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptPoliceQ, &event, portMAX_DELAY) == pdPASS) {
-            printf("[Client][POLICE] Handling event id=%u type=%d\n",
-                   (unsigned)event.eventID, (int)event.type);
-
+            
+            SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type); // Returns handleSem_deptPolice
+            /* Check if the semaphore handle is valid */
+            if (countSemaphore == NULL) {
+                printf("[Client][%s] ERROR: Semaphore handle is NULL\n", pcTaskGetName(NULL));
+                continue;
+            }
+            xSemaphoreTake(countSemaphore, portMAX_DELAY); // blocks if no vehicles available (counting semaphore)
+            
+            printf("[Client][%s] Handling event id=%u type=%d priority=%d\n",
+                   pcTaskGetName(NULL), (unsigned)event.eventID, (int)event.type, (int)event.priority); 
             /* Simulate handling the event - Very long delay */
             vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
@@ -116,20 +151,23 @@ void Task_Police_X(void *pvParameters)
             CompletionMsg_t Msg;
             Msg.eventID   = event.eventID;
             Msg.status    = 0; // Success
-            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "Police");
+            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "%s", pcTaskGetName(NULL));
             Msg.timestampEnd = xTaskGetTickCount(); // Current tick count as end timestamp
 
             /* Send completion message to Client UDP TX queue */
             BaseType_t queueCheck = xQueueSend(handle_clientUDPTxQ, &Msg, 0);
             if (queueCheck != pdPASS) {
-                printf("[Client][POLICE] Drop completion message id=%u (TX queue full)\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Drop completion message id=%u (TX queue full)\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
             else {
-                printf("[Client][POLICE] Sent completion message id=%u\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Sent completion message id=%u\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
 
-            printf("[Client][POLICE] Completed event id=%u\n", (unsigned)event.eventID);
+            printf("[Client][%s] Completed event id=%u\n", pcTaskGetName(NULL), (unsigned)event.eventID);
+
+            xSemaphoreGive(countSemaphore); // Release vehicle resource back
         }
+
     }
 
     vTaskDelete(NULL); // Should never reach here
@@ -139,7 +177,7 @@ void Task_Fire_X(void *pvParameters)
 {
     (void)pvParameters;
 
-    printf("[Client][FIRE] Started\n");
+    printf("[Client][%s] Started\n", pcTaskGetName(NULL));
 
     /* Main loop for Fire Department -> Dispatcher communication */
     for (;;) {
@@ -147,9 +185,18 @@ void Task_Fire_X(void *pvParameters)
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptFireQ, &event, portMAX_DELAY) == pdPASS) {
-            printf("[Client][FIRE] Handling event id=%u type=%d\n",
-                   (unsigned)event.eventID, (int)event.type);
+            
+            SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type); // Returns handleSem_deptFire
 
+            /* Check if the semaphore handle is valid */
+            if (countSemaphore == NULL) {
+                printf("[Client][%s] ERROR: Semaphore handle is NULL\n", pcTaskGetName(NULL));
+                continue;
+            }
+            xSemaphoreTake(countSemaphore, portMAX_DELAY); // blocks if no vehicles available (counting semaphore)
+
+            printf("[Client][%s] Handling event id=%u type=%d priority=%d\n",
+                   pcTaskGetName(NULL), (unsigned)event.eventID, (int)event.type, (int)event.priority); 
             /* Simulate handling the event - Very long delay */
             vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
@@ -157,20 +204,23 @@ void Task_Fire_X(void *pvParameters)
             CompletionMsg_t Msg;
             Msg.eventID   = event.eventID;
             Msg.status    = 0; // Success
-            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "FireDept");
+            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "%s", pcTaskGetName(NULL));
             Msg.timestampEnd = xTaskGetTickCount(); // Current tick count as end timestamp
 
             /* Send completion message to Client UDP TX queue */
             BaseType_t queueCheck = xQueueSend(handle_clientUDPTxQ, &Msg, 0);
             if (queueCheck != pdPASS) {
-                printf("[Client][FIRE] Drop completion message id=%u (TX queue full)\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Drop completion message id=%u (TX queue full)\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
             else {
-                printf("[Client][FIRE] Sent completion message id=%u\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Sent completion message id=%u\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
 
-            printf("[Client][FIRE] Completed event id=%u\n", (unsigned)event.eventID);
+            printf("[Client][%s] Completed event id=%u\n", pcTaskGetName(NULL), (unsigned)event.eventID);
+
+            xSemaphoreGive(countSemaphore); // Release vehicle resource back
         }
+
     }
 
     vTaskDelete(NULL); // Should never reach here
@@ -180,7 +230,7 @@ void Task_Maintenance_X(void *pvParameters)
 {
     (void)pvParameters;
 
-    printf("[Client][MAINTENANCE] Started\n");
+    printf("[Client][%s] Started\n", pcTaskGetName(NULL));
 
     /* Main loop for Maintenance -> Dispatcher communication */
     for (;;) {
@@ -188,9 +238,18 @@ void Task_Maintenance_X(void *pvParameters)
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptMaintQ, &event, portMAX_DELAY) == pdPASS) {
-            printf("[Client][MAINTENANCE] Handling event id=%u type=%d\n",
-                   (unsigned)event.eventID, (int)event.type);
+            
+            SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type); // Returns handleSem_deptMaint
 
+            /* Check if the semaphore handle is valid */
+            if (countSemaphore == NULL) {
+                printf("[Client][%s] ERROR: Semaphore handle is NULL\n", pcTaskGetName(NULL));
+                continue;
+            }
+            xSemaphoreTake(countSemaphore, portMAX_DELAY); // blocks if no vehicles available (counting semaphore)
+
+            printf("[Client][%s] Handling event id=%u type=%d priority=%d\n",
+                   pcTaskGetName(NULL), (unsigned)event.eventID, (int)event.type, (int)event.priority);
             /* Simulate handling the event - Very long delay */
             vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
@@ -198,20 +257,23 @@ void Task_Maintenance_X(void *pvParameters)
             CompletionMsg_t Msg;
             Msg.eventID   = event.eventID;
             Msg.status    = 0; // Success
-            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "Maintenance");
+            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "%s", pcTaskGetName(NULL));
             Msg.timestampEnd = xTaskGetTickCount(); // Current tick count as end timestamp
 
             /* Send completion message to Client UDP TX queue */
             BaseType_t queueCheck = xQueueSend(handle_clientUDPTxQ, &Msg, 0);
             if (queueCheck != pdPASS) {
-                printf("[Client][MAINTENANCE] Drop completion message id=%u (TX queue full)\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Drop completion message id=%u (TX queue full)\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
             else {
-                printf("[Client][MAINTENANCE] Sent completion message id=%u\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Sent completion message id=%u\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
 
-            printf("[Client][MAINTENANCE] Completed event id=%u\n", (unsigned)event.eventID);
+            printf("[Client][%s] Completed event id=%u\n", pcTaskGetName(NULL), (unsigned)event.eventID);
+
+            xSemaphoreGive(countSemaphore); // Release vehicle resource back
         }
+
     }
 
     vTaskDelete(NULL); // Should never reach here
@@ -221,7 +283,7 @@ void Task_Waste_X(void *pvParameters)
 {
     (void)pvParameters;
 
-    printf("[Client][WASTE] Started\n");
+    printf("[Client][%s] Started\n", pcTaskGetName(NULL));
 
     /* Main loop for Waste Collection -> Dispatcher communication */
     for (;;) {
@@ -229,9 +291,18 @@ void Task_Waste_X(void *pvParameters)
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptWasteQ, &event, portMAX_DELAY) == pdPASS) {
-            printf("[Client][WASTE] Handling event id=%u type=%d\n",
-                   (unsigned)event.eventID, (int)event.type);
 
+            SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type); // Returns handleSem_deptWaste
+
+            /* Check if the semaphore handle is valid */
+            if (countSemaphore == NULL) {
+                printf("[Client][%s] ERROR: Semaphore handle is NULL\n", pcTaskGetName(NULL));
+                continue;
+            }
+            xSemaphoreTake(countSemaphore, portMAX_DELAY); // blocks if no vehicles available (counting semaphore)
+
+            printf("[Client][%s] Handling event id=%u type=%d priority=%d\n",
+                   pcTaskGetName(NULL), (unsigned)event.eventID, (int)event.type, (int)event.priority);
             /* Simulate handling the event - Very long delay */
             vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
@@ -239,20 +310,23 @@ void Task_Waste_X(void *pvParameters)
             CompletionMsg_t Msg;
             Msg.eventID   = event.eventID;
             Msg.status    = 0; // Success
-            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "WasteCollect");
+            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "%s", pcTaskGetName(NULL));
             Msg.timestampEnd = xTaskGetTickCount(); // Current tick count as end timestamp
 
             /* Send completion message to Client UDP TX queue */
             BaseType_t queueCheck = xQueueSend(handle_clientUDPTxQ, &Msg, 0);
             if (queueCheck != pdPASS) {
-                printf("[Client][WASTE] Drop completion message id=%u (TX queue full)\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Drop completion message id=%u (TX queue full)\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
             else {
-                printf("[Client][WASTE] Sent completion message id=%u\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Sent completion message id=%u\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
 
-            printf("[Client][WASTE] Completed event id=%u\n", (unsigned)event.eventID);
+            printf("[Client][%s] Completed event id=%u\n", pcTaskGetName(NULL), (unsigned)event.eventID);
+
+            xSemaphoreGive(countSemaphore); // Release vehicle resource back
         }
+
     }
 
     vTaskDelete(NULL); // Should never reach here
@@ -262,7 +336,7 @@ void Task_Electricity_X(void *pvParameters)
 {
     (void)pvParameters;
 
-    printf("[Client][ELECTRICITY] Started\n");
+    printf("[Client][%s] Started\n", pcTaskGetName(NULL));
 
     /* Main loop for Electricity Department -> Dispatcher communication */
     for (;;) {
@@ -270,9 +344,18 @@ void Task_Electricity_X(void *pvParameters)
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptElectQ, &event, portMAX_DELAY) == pdPASS) {
-            printf("[Client][ELECTRICITY] Handling event id=%u type=%d\n",
-                   (unsigned)event.eventID, (int)event.type);
+            
+            SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type); // Returns handleSem_deptElect
 
+            /* Check if the semaphore handle is valid */
+            if (countSemaphore == NULL) {
+                printf("[Client][%s] ERROR: Semaphore handle is NULL\n", pcTaskGetName(NULL));
+                continue;
+            }
+            xSemaphoreTake(countSemaphore, portMAX_DELAY); // blocks if no vehicles available (counting semaphore)
+
+            printf("[Client][%s] Handling event id=%u type=%d priority=%d\n",
+                   pcTaskGetName(NULL), (unsigned)event.eventID, (int)event.type, (int)event.priority);
             /* Simulate handling the event - Very long delay */
             vTaskDelay(pdMS_TO_TICKS(baseEventHandling_Delay_MS * event.delayFactor)); // Simulated handling time
 
@@ -280,20 +363,23 @@ void Task_Electricity_X(void *pvParameters)
             CompletionMsg_t Msg;
             Msg.eventID   = event.eventID;
             Msg.status    = 0; // Success
-            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "Electricity");
+            snprintf(Msg.handledBy, sizeof(Msg.handledBy), "%s", pcTaskGetName(NULL));
             Msg.timestampEnd = xTaskGetTickCount(); // Current tick count as end timestamp
 
             /* Send completion message to Client UDP TX queue */
             BaseType_t queueCheck = xQueueSend(handle_clientUDPTxQ, &Msg, 0);
             if (queueCheck != pdPASS) {
-                printf("[Client][ELECTRICITY] Drop completion message id=%u (TX queue full)\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Drop completion message id=%u (TX queue full)\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
             else {
-                printf("[Client][ELECTRICITY] Sent completion message id=%u\n", (unsigned)Msg.eventID);
+                printf("[Client][%s] Sent completion message id=%u\n", pcTaskGetName(NULL), (unsigned)Msg.eventID);
             }
 
-            printf("[Client][ELECTRICITY] Completed event id=%u\n", (unsigned)event.eventID);
+            printf("[Client][%s] Completed event id=%u\n", pcTaskGetName(NULL), (unsigned)event.eventID);
+
+            xSemaphoreGive(countSemaphore); // Release vehicle resource back
         }
+
     }
 
     vTaskDelete(NULL); // Should never reach here

@@ -13,7 +13,7 @@
 #include "Server/Server_Task.h"
 #include "Server/Server_UDP.h"
 #include "Client/Client_UDP.h"
-#include "Client/Dispatcher_Task.h"
+#include "Client/DispatcherAndMangerDepartment_Task.h"
 #include "Client/Vehicle_Task.h"
 
 // Priorities: 
@@ -23,21 +23,41 @@
 #define LOW_PRIORITY       1
 
 // Task Handles:
-TaskHandle_t xServerEventGenTaskHandle = NULL; // Server Event Generator Task Handle
+TaskHandle_t xServerEventGenTaskHandle            = NULL; // Server Event Generator Task Handle
+TaskHandle_t xClientDispatcherTaskHandle          = NULL; // Client Dispatcher Task Handle
+TaskHandle_t xClientManagerTaskHandle[6]          = {NULL}; // Client Manager Task Handle array for 6 departments
 
+TaskHandle_t xClientAmbulanceTaskHandle[AMBULANCE_VEHICLES]            = {NULL}; // Client Ambulance Task Handle array
+TaskHandle_t xClientPoliceTaskHandle[POLICE_VEHICLES]                  = {NULL}; // Client Police Task Handle array
+TaskHandle_t xClientFireTaskHandle[FIRE_VEHICLES]                      = {NULL}; // Client Fire Task Handle array
+TaskHandle_t xClientMaintenanceTaskHandle[MAINTENANCE_VEHICLES]        = {NULL}; // Client Maintenance Task Handle array
+TaskHandle_t xClientWasteTaskHandle[WASTE_VEHICLES]                    = {NULL}; // Client Waste Collection Task Handle array
+TaskHandle_t xClientElectricityTaskHandle[ELECTRICITY_VEHICLES]        = {NULL}; // Client Electricity Task Handle array
+
+/* Department Description Array - Helper array */
+DepartmentDescription_t deptDesc[] = {
+    { "AMBULANCE",   EVENT_AMBULANCE,        NULL, NULL, NULL },
+    { "POLICE",      EVENT_POLICE,           NULL, NULL, NULL },
+    { "FIRE",        EVENT_FIRE_DEPARTMENT,  NULL, NULL, NULL },
+    { "MAINT",       EVENT_MAINTENANCE,      NULL, NULL, NULL },
+    { "WASTE",       EVENT_WASTE_COLLECTION, NULL, NULL, NULL },
+    { "ELECTRICITY", EVENT_ELECTRICITY,      NULL, NULL, NULL },
+};
+
+const size_t numDepts = sizeof(deptDesc) / sizeof(deptDesc[0]);
 
 int main(void)
 {
     printf("[MAIN] Start Main program\n");
-    
+
+    /* Initialize all components */
     init_main(); // System Initialization
     ServerUDP_Init(); // Initialize Server UDP
     ClientUDP_Init(); // Initialize Client UDP
 
-    printf("[MAIN] System initialized\n");
 
 
-    /* Create all message queues and mutexes */
+    /* Create all message queues, mutexes and counting semaphores */
 
     BaseType_t Queues_Check = CreateUDPQueues(); // Server <--> Client queues
     if (Queues_Check != pdPASS) {
@@ -45,16 +65,23 @@ int main(void)
         return -31;
     }
 
-    BaseType_t Dept_QueuesAndMutex_Check = CreateClientDepartmentQueuesAndMutex(); // Client Department queues and mutexes
-    if (Dept_QueuesAndMutex_Check != pdPASS) {
+    BaseType_t Dept_QueuesSemaphoresAndMutex_Check = CreateClientDepartmentQueuesSemaphoresAndMutex(); // Client Department queues and mutexes
+    if (Dept_QueuesSemaphoresAndMutex_Check != pdPASS) {
     printf("[MAIN] Failed to create client department queues\n");
     return -32;
     }
+
+    printf("[MAIN] Queues, Semaphores and Mutexes created successfully\n");
+
+    ClientDeptManager_Init(deptDesc); // Initialize Client Department Manager
+
+    printf("[MAIN] System initialized\n");
 
     
     /* --------Tasks Creation---------- */
 
     /* Create UDP tasks */
+    printf("[MAIN] Starting Tasks creations ...\n");
 
     if ((xTaskCreate( vServerUDPTxTask, "Server_UDP_Tx", configMINIMAL_STACK_SIZE,
                      NULL, MEDIUM_PRIORITY, NULL) != pdPASS))
@@ -99,66 +126,123 @@ int main(void)
     else { printf("[MAIN] xTaskCreate(ServerTask) Successful\n"); } // Successful creation of Server Event Generator Task
 
 
-    /* Create Client Dispatcher Task */
+    /* Create Client Dispatcher & Manager Task */
     if ((xTaskCreate( Task_Dispatcher, "Client_Dispatcher", configMINIMAL_STACK_SIZE,
-                     NULL, NORMAL_PRIORITY, NULL) != pdPASS))
+                     NULL, NORMAL_PRIORITY, &xClientDispatcherTaskHandle) != pdPASS))
     { 
         printf("[MAIN] xTaskCreate(ClientDispatcher_Task) Failed!\n");
         return -27;
     }
     else { printf("[MAIN] xTaskCreate(ClientDispatcher_Task) Successful\n"); } // Successful creation of Client Dispatcher Task
 
+    for (size_t i = 0; i < 6; i++)
+    {   
+        // Create unique task name for each department manager task
+        char taskName[32] = {0};
+        sprintf(taskName, "MANAGER_%s", deptDesc[i].name); // depNames from Shared_Configuration.h
 
-    /* Create Client Department Tasks */
-
-    if ((xTaskCreate( Task_Ambulance_X, "Client_Ambulance", configMINIMAL_STACK_SIZE,
-                     NULL, LOW_PRIORITY, NULL) != pdPASS))
-    { 
-        printf("[MAIN] xTaskCreate(ClientAmbulance_Task) Failed!\n");
-        return -41;
+        if ((xTaskCreate( Task_Manager_Departments_X, taskName, configMINIMAL_STACK_SIZE,
+                     &deptDesc[i], LOW_PRIORITY, &xClientManagerTaskHandle[i]) != pdPASS))
+            { 
+            printf("[MAIN] xTaskCreate(Client_%s) Failed!\n", taskName);
+            return -41;
+            }
+        else { printf("[MAIN] xTaskCreate(Client_%s) Successful\n", taskName); } // Successful creation of Client Ambulance Task
     }
-    else { printf("[MAIN] xTaskCreate(ClientAmbulance_Task) Successful\n"); } // Successful creation of Client Ambulance Task
 
-    if ((xTaskCreate( Task_Police_X, "Client_Police", configMINIMAL_STACK_SIZE,
-                     NULL, LOW_PRIORITY, NULL) != pdPASS))
-    { 
-        printf("[MAIN] xTaskCreate(ClientPolice_Task) Failed!\n");
-        return -42;
+
+
+    /* Create Client Department Tasks - Based on numbers of vehicles in each department */
+    for (size_t i = 0; i < AMBULANCE_VEHICLES; i++)
+    {   
+        // Create unique task name for each Ambulance vehicle task
+        char taskName[24] = {0};
+        sprintf(taskName, "AMBULANCE_%zu", i+1);
+
+        if ((xTaskCreate( Task_Ambulance_X, taskName, configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, &xClientAmbulanceTaskHandle[i]) != pdPASS))
+            { 
+            printf("[MAIN] xTaskCreate(Client_%s) Failed!\n", taskName);
+            return -41;
+            }
+        else { printf("[MAIN] xTaskCreate(Client_%s) Successful\n", taskName); } // Successful creation of Client Ambulance Task
     }
-    else { printf("[MAIN] xTaskCreate(ClientPolice_Task) Successful\n"); } // Successful creation of Client Police Task
 
-    if ((xTaskCreate( Task_Fire_X, "Client_Fire", configMINIMAL_STACK_SIZE,
-                     NULL, LOW_PRIORITY, NULL) != pdPASS))
-    { 
-        printf("[MAIN] xTaskCreate(ClientFire_Task) Failed!\n");
-        return -43;
+    for (size_t i = 0; i < POLICE_VEHICLES; i++)
+    {
+        // Create unique task name for each Police vehicle task
+        char taskName[24] = {0};
+        sprintf(taskName, "POLICE_%zu", i+1);
+
+        if ((xTaskCreate( Task_Police_X, taskName, configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, &xClientPoliceTaskHandle[i]) != pdPASS))
+        { 
+            printf("[MAIN] xTaskCreate(Client_%s) Failed!\n", taskName);
+            return -42;
+        }
+        else { printf("[MAIN] xTaskCreate(Client_%s) Successful\n", taskName); } // Successful creation of Client Police Task
     }
-    else { printf("[MAIN] xTaskCreate(ClientFire_Task) Successful\n"); } // Successful creation of Client Fire Task
 
-    if ((xTaskCreate( Task_Maintenance_X, "Client_Maintenance", configMINIMAL_STACK_SIZE,
-                     NULL, LOW_PRIORITY, NULL) != pdPASS))
-    { 
-        printf("[MAIN] xTaskCreate(ClientMaintenance_Task) Failed!\n");
-        return -44;
+    for (int i=0; i<FIRE_VEHICLES; i++)
+    {
+        // Create unique task name for each Fire vehicle task
+        char taskName[24] = {0};
+        sprintf(taskName, "FIRE_%d", i+1);
+
+        if ((xTaskCreate( Task_Fire_X, taskName, configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, &xClientFireTaskHandle[i]) != pdPASS))
+        { 
+            printf("[MAIN] xTaskCreate(Client_%s) Failed!\n", taskName);
+            return -43;
+        }
+        else { printf("[MAIN] xTaskCreate(Client_%s) Successful\n", taskName); } // Successful creation of Client Fire Task
     }
-    else { printf("[MAIN] xTaskCreate(ClientMaintenance_Task) Successful\n"); } // Successful creation of Client Maintenance Task
 
-    if ((xTaskCreate( Task_Waste_X, "Client_Waste", configMINIMAL_STACK_SIZE,
-                     NULL, LOW_PRIORITY, NULL) != pdPASS))
-    { 
-        printf("[MAIN] xTaskCreate(ClientWaste_Task) Failed!\n");
-        return -45;
+    for (size_t i = 0; i < MAINTENANCE_VEHICLES; i++)
+    {
+        // Create unique task name for each Maintenance vehicle task
+        char taskName[24] = {0};
+        sprintf(taskName, "MAINTENANCE_%zu", i+1);
+
+        if ((xTaskCreate( Task_Maintenance_X, taskName, configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, &xClientMaintenanceTaskHandle[i]) != pdPASS))
+        { 
+           printf("[MAIN] xTaskCreate(Client_%s) Failed!\n", taskName);
+           return -44;
+        }
+        else { printf("[MAIN] xTaskCreate(Client_%s) Successful\n", taskName); } // Successful creation of Client Maintenance Task
     }
-    else { printf("[MAIN] xTaskCreate(ClientWaste_Task) Successful\n"); } // Successful creation of Client Waste Task
-
-    if ((xTaskCreate( Task_Electricity_X, "Client_Electricity", configMINIMAL_STACK_SIZE,
-                     NULL, LOW_PRIORITY, NULL) != pdPASS))
-    { 
-        printf("[MAIN] xTaskCreate(ClientElectricity_Task) Failed!\n");
-        return -46;
+    
+    for (size_t i = 0; i < WASTE_VEHICLES; i++)
+    {
+        // Create unique task name for each Waste Collection vehicle task
+        char taskName[24] = {0};
+        sprintf(taskName, "WASTE_%zu", i+1);
+        
+        if ((xTaskCreate( Task_Waste_X, taskName, configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, &xClientWasteTaskHandle[i]) != pdPASS))
+        { 
+            printf("[MAIN] xTaskCreate(Client_%s) Failed!\n", taskName);
+            return -45;
+        }
+        else { printf("[MAIN] xTaskCreate(Client_%s) Successful\n", taskName); } // Successful creation of Client Waste Task
     }
-    else { printf("[MAIN] xTaskCreate(ClientElectricity_Task) Successful\n"); } // Successful creation of Client Electricity Task
 
+    for (size_t i = 0; i < ELECTRICITY_VEHICLES; i++)
+    {
+        // Create unique task name for each Electricity vehicle task
+        char taskName[24] = {0};
+        sprintf(taskName, "ELECTRICITY_%zu", i+1);
+
+        if ((xTaskCreate( Task_Electricity_X, taskName, configMINIMAL_STACK_SIZE,
+                     NULL, LOW_PRIORITY, &xClientElectricityTaskHandle[i]) != pdPASS))
+        { 
+            printf("[MAIN] xTaskCreate(Client_%s) Failed!\n", taskName);
+            return -46;
+        }
+        else { printf("[MAIN] xTaskCreate(Client_%s) Successful\n", taskName); } // Successful creation of Client Electricity Task
+    }
+    
 
 
     /* Start Scheduler */

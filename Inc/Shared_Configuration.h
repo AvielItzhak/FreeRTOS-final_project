@@ -36,6 +36,16 @@
 #define UDP_SERVER_PORT      5000   // Server PORT 
 #define UDP_CLIENT_PORT      5001   // Client PORT
 
+/* Additional configuration for client tasks */
+#define MAX_COUNTING_SEMAPHORE     5 // Max count for counting semaphore
+#define AMBULANCE_VEHICLES         3 // Number of Ambulance vehicles
+#define POLICE_VEHICLES            5 // Number of Police vehicles
+#define FIRE_VEHICLES              2 // Number of Fire Department vehicles
+#define MAINTENANCE_VEHICLES       1 // Number of Maintenance vehicles
+#define WASTE_VEHICLES             2 // Number of Waste Collection vehicles
+#define ELECTRICITY_VEHICLES       1 // Number of Electricity vehicles
+
+
 
 /* --------Data Structures------- */
 
@@ -84,7 +94,7 @@ extern QueueHandle_t handle_clientUDPRxQ;  /* use for EmergencyEvent_t */
 extern QueueHandle_t handle_clientUDPTxQ;  /* use for CompletionMsg_t  */
 
 
-/* --------Queues (Dispatcher <-> Departments)-------- */
+/* --------Queues, Mutexs, countingSemaphores (Dispatcher <-> Departments)-------- */
 
 #define DEPT_Q_LEN  16 // Length of each Department Queue
 
@@ -102,8 +112,27 @@ extern SemaphoreHandle_t handleMux_deptMaintQ;      // Mutex for Maintenance que
 extern SemaphoreHandle_t handleMux_deptElectQ;      // Mutex for Electricity queue
 extern SemaphoreHandle_t handleMux_deptWasteQ;      // Mutex for Waste Collection queue
 
-/* Create UDP & Client department queues */
-BaseType_t CreateClientDepartmentQueuesAndMutex(void);
+extern SemaphoreHandle_t handleSem_deptAmbulance;  // Counting Semaphore for Ambulance department
+extern SemaphoreHandle_t handleSem_deptPolice;     // Counting Semaphore for Police department
+extern SemaphoreHandle_t handleSem_deptFire;       // Counting Semaphore for Fire Department
+extern SemaphoreHandle_t handleSem_deptMaint;      // Counting Semaphore for Maintenance department
+extern SemaphoreHandle_t handleSem_deptElect;      // Counting Semaphore for Electricity department
+extern SemaphoreHandle_t handleSem_deptWaste;      // Counting Semaphore for Waste Collection department
+
+/* Helper variable - Department names */
+extern const char depNames[EVENT_MAX][16];
+ typedef struct
+{
+    const char *name;
+    EventType_t type;
+
+    QueueHandle_t       queue;
+    SemaphoreHandle_t   mutex;     /* protects dept queue */
+    SemaphoreHandle_t   availableSem;   /* counting sem = available vehicles */
+} DepartmentDescription_t;
+
+/* Create UDP & Client department queues, mutexes and counting semaphores */
+BaseType_t CreateClientDepartmentQueuesSemaphoresAndMutex(void);
 BaseType_t CreateUDPQueues(void);
 
 

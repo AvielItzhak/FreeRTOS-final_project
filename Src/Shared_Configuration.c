@@ -11,7 +11,7 @@
 
 /* ------Queue implementation------ */
 
-/* Define queue and mutex handles and set to NULL */
+/* Define queue, semaphore and mutex handles and set to NULL */
 QueueHandle_t handle_serverUDPTxQ      = NULL;
 QueueHandle_t handle_serverUDPRxQ      = NULL;
 QueueHandle_t handle_clientUDPRxQ      = NULL;
@@ -30,6 +30,25 @@ SemaphoreHandle_t handleMux_deptFireQ      = NULL;
 SemaphoreHandle_t handleMux_deptMaintQ     = NULL;
 SemaphoreHandle_t handleMux_deptElectQ     = NULL;
 SemaphoreHandle_t handleMux_deptWasteQ     = NULL;
+
+SemaphoreHandle_t handleSem_deptAmbulance = NULL;
+SemaphoreHandle_t handleSem_deptPolice    = NULL;
+SemaphoreHandle_t handleSem_deptFire      = NULL;
+SemaphoreHandle_t handleSem_deptMaint     = NULL;
+SemaphoreHandle_t handleSem_deptElect     = NULL;
+SemaphoreHandle_t handleSem_deptWaste     = NULL;
+
+/* Helper variable - Department names */
+ const char depNames[EVENT_MAX][16] = { 
+    "AMBULANCE",
+    "POLICE",
+    "FIRE",
+    "MAINTENANCE",
+    "WASTE",
+    "ELECTRICITY"
+};
+
+
 /* Function to create all UDP queues */
 BaseType_t CreateUDPQueues(void) 
 {
@@ -49,8 +68,8 @@ BaseType_t CreateUDPQueues(void)
     return pdPASS;
 } /* End of CreateUDPQueues */
 
-/* Function to create all Department queues and mutexes */
-BaseType_t CreateClientDepartmentQueuesAndMutex(void) 
+/* Function to create all Department queues, mutexes and counting semaphores */
+BaseType_t CreateClientDepartmentQueuesSemaphoresAndMutex(void) 
 {
     handle_deptAmbulanceQ = xQueueCreate(DEPT_Q_LEN, sizeof(EmergencyEvent_t));
     handle_deptPoliceQ    = xQueueCreate(DEPT_Q_LEN, sizeof(EmergencyEvent_t));
@@ -66,13 +85,26 @@ BaseType_t CreateClientDepartmentQueuesAndMutex(void)
     handleMux_deptElectQ     = xSemaphoreCreateMutex();
     handleMux_deptWasteQ     = xSemaphoreCreateMutex();
 
+    handleSem_deptAmbulance = xSemaphoreCreateCounting(AMBULANCE_VEHICLES, AMBULANCE_VEHICLES);
+    handleSem_deptPolice    = xSemaphoreCreateCounting(POLICE_VEHICLES, POLICE_VEHICLES);
+    handleSem_deptFire      = xSemaphoreCreateCounting(FIRE_VEHICLES, FIRE_VEHICLES);
+    handleSem_deptMaint     = xSemaphoreCreateCounting(MAINTENANCE_VEHICLES, MAINTENANCE_VEHICLES);
+    handleSem_deptElect     = xSemaphoreCreateCounting(ELECTRICITY_VEHICLES, ELECTRICITY_VEHICLES);
+    handleSem_deptWaste     = xSemaphoreCreateCounting(WASTE_VEHICLES, WASTE_VEHICLES); 
+
+    /* Check if all queues, mutexes and semaphores were created successfully */
     if (!handle_deptAmbulanceQ || !handle_deptPoliceQ || !handle_deptFireQ || !handle_deptMaintQ || !handle_deptElectQ || !handle_deptWasteQ ||
-        !handleMux_deptAmbulanceQ || !handleMux_deptPoliceQ || !handleMux_deptFireQ || !handleMux_deptMaintQ || !handleMux_deptElectQ || !handleMux_deptWasteQ) {
-        printf("[Shared] ERROR: Failed to create one or more department queues or mutexes\n");
+        !handleMux_deptAmbulanceQ || !handleMux_deptPoliceQ || !handleMux_deptFireQ || !handleMux_deptMaintQ || !handleMux_deptElectQ || 
+        !handleMux_deptWasteQ || !handleSem_deptAmbulance || !handleSem_deptPolice || !handleSem_deptFire || !handleSem_deptMaint || 
+        !handleSem_deptElect || !handleSem_deptWaste) 
+    {
+        printf("[Shared] ERROR: Failed to create one or more department queues, semaphores or mutexes\n");
         return pdFAIL; // return failure if any creation failed
     }
 
-    printf("[Shared] Department queues and mutexes created successfully\n");
+    printf("[Shared] Department queues, semaphores and mutexes created successfully\n");
     return pdPASS; // return success if all creations succeeded
 
-} /* End of CreateClientDepartmentQueuesAndMutex */
+} /* End of CreateClientDepartmentQueuesSemaphoresAndMutex */
+
+

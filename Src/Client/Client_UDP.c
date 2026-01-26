@@ -82,7 +82,7 @@ void vClientUDPRxTask(void *pvParameters)
             if (queueCheck != pdPASS) {
                 printf("[Client][UDP-RX] DROP id=%u (RX queue full)\n", (unsigned)event.eventID);
             } else {
-                printf("[Client][UDP-RX] Enqueued id=%u type=%d\n",
+                printf("[Client][UDP-RX] Sent to queue id=%u type=%d\n",
                        (unsigned)event.eventID, (int)event.type);
             }
             continue; // Continue to next iteration
