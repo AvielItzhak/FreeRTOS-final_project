@@ -110,6 +110,8 @@ void ClientDeptManager_Init(DepartmentDescription_t *pvParameters)
     printf("[Client][ALL MANAGERS] Department array initialized and semaphores seeded\n");
 }
 
+
+
 /* ---------- TASKS ---------- */
 
 /* Main Task to handle Dispatcher responsibilities */
@@ -147,53 +149,223 @@ void Task_Dispatcher(void *pvParameters)
     vTaskDelete(NULL); // Should never reach here
 }
 
-// TODO: Implement Task_Manager_X which monitors department queues and vehicle availability and controls dispatching logic.
-      // After there is a need to implement sub prioritization or advanced dispatching strategies.
+static UBaseType_t DeptMaxVehicles(EventType_t type)
+{
+    switch (type) {
+        case EVENT_AMBULANCE:        return AMBULANCE_VEHICLES;
+        case EVENT_POLICE:           return POLICE_VEHICLES;
+        case EVENT_FIRE_DEPARTMENT:  return FIRE_VEHICLES;
+        case EVENT_MAINTENANCE:      return MAINTENANCE_VEHICLES;
+        case EVENT_WASTE_COLLECTION: return WASTE_VEHICLES;
+        case EVENT_ELECTRICITY:      return ELECTRICITY_VEHICLES;
+        default:                     return 1;
+    }
+}
+
+/* Cancel ONE lowest-priority event currently waiting in the department queue.
+   Keeps all other events (stable), and sends a "cancelled" completion.
+*/
+static BaseType_t CancelOneLowestPriorityEvent(const DepartmentDescription_t *d)
+{
+    EmergencyEvent_t buf[DEPT_Q_LEN];
+    UBaseType_t n = 0;
+
+    xSemaphoreTake(d->mutex, portMAX_DELAY);
+
+    n = uxQueueMessagesWaiting(d->queue);
+    if (n == 0) {
+        xSemaphoreGive(d->mutex);
+        return pdFALSE;
+    }
+    if (n > DEPT_Q_LEN) n = DEPT_Q_LEN;
+
+    /* Drain */
+    for (UBaseType_t i = 0; i < n; i++) {
+        if (xQueueReceive(d->queue, &buf[i], 0) != pdPASS) {
+            n = i;
+            break;
+        }
+    }
+
+    /* Find lowest priority (priority: 1 low, 3 high) */
+    UBaseType_t cancelIdx = 0;
+    uint8_t minPrio = buf[0].priority;
+    for (UBaseType_t i = 1; i < n; i++) {
+        if (buf[i].priority < minPrio) {
+            minPrio = buf[i].priority;
+            cancelIdx = i;
+        }
+    }
+
+    EmergencyEvent_t cancelled = buf[cancelIdx];
+
+    /* Requeue everything except cancelled */
+    for (UBaseType_t i = 0; i < n; i++) {
+        if (i == cancelIdx) continue;
+        (void)xQueueSend(d->queue, &buf[i], 0);
+    }
+
+    xSemaphoreGive(d->mutex);
+
+    /* Notify server: event was cancelled */
+    CompletionMsg_t msg = {0};
+    msg.eventID = cancelled.eventID;
+    msg.status  = STATUS_CANCELLED;
+    msg.timestampEnd = xTaskGetTickCount(); /* ok for demo */
+
+    /* IMPORTANT: snprintf must use "%s" format */
+    snprintf(msg.handledBy, sizeof(msg.handledBy), "%s", pcTaskGetName(NULL));
+
+    (void)xQueueSend(handle_clientUDPTxQ, &msg, 0);
+
+    printf("[Client][%s] CANCELLED event id=%u prio=%u (overload)\n",
+           pcTaskGetName(NULL), (unsigned)cancelled.eventID, (unsigned)cancelled.priority);
+
+    return pdTRUE;
+}
+
+/* Reorder queue by priority (high first), stable within same priority.
+   This is the simplest “reassign” without per-vehicle inbox queues.
+*/
+static void ReorderQueueByPriority(const DepartmentDescription_t *d)
+{
+    EmergencyEvent_t buf[DEPT_Q_LEN];
+    UBaseType_t n = 0;
+
+    xSemaphoreTake(d->mutex, portMAX_DELAY);
+
+    n = uxQueueMessagesWaiting(d->queue);
+    if (n == 0) {
+        xSemaphoreGive(d->mutex);
+        return;
+    }
+    if (n > DEPT_Q_LEN) n = DEPT_Q_LEN;
+
+    for (UBaseType_t i = 0; i < n; i++) {
+        if (xQueueReceive(d->queue, &buf[i], 0) != pdPASS) {
+            n = i;
+            break;
+        }
+    }
+
+    /* Stable insertion sort: higher priority first */
+    for (UBaseType_t i = 1; i < n; i++) {
+        EmergencyEvent_t key = buf[i];
+        int j = (int)i - 1;
+        while (j >= 0 && buf[j].priority < key.priority) {
+            buf[j + 1] = buf[j];
+            j--;
+        }
+        buf[j + 1] = key;
+    }
+
+    for (UBaseType_t i = 0; i < n; i++) {
+        (void)xQueueSend(d->queue, &buf[i], 0);
+    }
+
+    xSemaphoreGive(d->mutex);
+
+    printf("[Client][%s] Reordered queue by priority (n=%u)\n",
+           pcTaskGetName(NULL), (unsigned)n);
+}
+
+// TODO: Task_Manager_Departments_X
+//   1. Fix task manger interrupt
+//   2. Fix break and return policy
+//   3. Maybe add extra feature
 
 void Task_Manager_Departments_X(void *pvParameters)
 {
-    DepartmentDescription_t *dept = (DepartmentDescription_t *)pvParameters;
-
-    if (dept == NULL ||
-        dept->queue == NULL ||
-        dept->mutex == NULL ||
-        dept->availableSem == NULL)
-    {
-        printf("[Client][%s] ERROR: bad pvParameters / NULL handles\n", pcTaskGetName(NULL));
+    DepartmentDescription_t *d = (DepartmentDescription_t *)pvParameters;
+    if (d == NULL || d->queue == NULL || d->mutex == NULL || d->availableSem == NULL) {
+        printf("[Client][MANAGER] Bad params -> deleting task\n");
         vTaskDelete(NULL);
     }
 
-    printf("[Client][%s] Started\n", pcTaskGetName(NULL));
+    const UBaseType_t maxVehicles = DeptMaxVehicles(d->type);
 
+    /* How many tokens we “stole” for break (vehicles unavailable by policy) */
+    UBaseType_t breakCount = 0;
+
+    TickType_t lastBusyTick = xTaskGetTickCount();
+
+    printf("[Client][%s] Started (dept=%s maxVehicles=%u)\n",
+           pcTaskGetName(NULL), d->name, (unsigned)maxVehicles);
 
     for (;;) {
-        BaseType_t didWork = pdFALSE;
+        const UBaseType_t qLen = uxQueueMessagesWaiting(d->queue);
 
-        if (uxQueueMessagesWaiting(dept->queue) > 0) {
+        if (qLen > 0) {
+            lastBusyTick = xTaskGetTickCount();
+        }
 
-            if (xSemaphoreTake(dept->availableSem, 0) == pdPASS) {
+        /* ---------------- Overload policy ---------------- */
+        if (qLen >= OVERLOAD_THRESHOLD) {
 
-                EmergencyEvent_t event;
+            /* Ensure no one is on break during overload */
+            while (breakCount > 0) {
+                xSemaphoreGive(d->availableSem);
+                breakCount--;
+                printf("[Client][%s] Dept=%s -> RETURN from break (breakCount=%u)\n",
+                       pcTaskGetName(NULL), d->name, (unsigned)breakCount);
+            }
 
-                xSemaphoreTake(dept->mutex, portMAX_DELAY);
-                BaseType_t ok = xQueueReceive(dept->queue, &event, 0);
-                xSemaphoreGive(dept->mutex);
+            /* Reorder so vehicles will take high priority first */
+            ReorderQueueByPriority(d);
 
-                if (ok == pdPASS) {
-                    didWork = pdTRUE;
-                    printf("[Client][%s] Dept=%s took event id=%u\n",
-                           pcTaskGetName(NULL), dept->name, (unsigned)event.eventID);
+            /* Cancel lowest-priority events until we reduce backlog */
+            UBaseType_t cancelDone = 0;
+            while (uxQueueMessagesWaiting(d->queue) > OVERLOAD_TARGET &&
+                   cancelDone < MAX_CANCEL_PER_CYCLE) {
 
-                    /* TODO: send event to actual vehicle (queue/notify). */
+                if (CancelOneLowestPriorityEvent(d) == pdTRUE) {
+                    cancelDone++;
                 } else {
-                    /* couldn't pop -> return token */
-                    xSemaphoreGive(dept->availableSem);
+                    break;
                 }
             }
         }
 
-        if (!didWork) vTaskDelay(pdMS_TO_TICKS(10));
-    }
+        /* ---------------- Break / return policy (simple) ----------------
+           If system is idle (queue empty for some time), allow some vehicles “on break”.
+           If queue has work and we have break tokens -> return them immediately.
+        */
+        static TickType_t lastNonEmptyTick = 0;
 
-    vTaskDelete(NULL); // Should never reach here
+        if (lastNonEmptyTick == 0) {
+            lastNonEmptyTick = xTaskGetTickCount();
+        }
+
+        TickType_t now = xTaskGetTickCount();
+
+        if (qLen > 0) {
+            lastNonEmptyTick = now;
+        
+            /* If backlog exists, immediately return all vehicles from break */
+            while (breakCount > 0) {
+                xSemaphoreGive(d->availableSem);
+                breakCount--;
+                printf("[Client][%s] Dept=%s -> RETURN from break (breakCount=%u)\n",
+                       pcTaskGetName(NULL), d->name, (unsigned)breakCount);
+            }
+        }
+        else {
+            /* Queue empty */
+            const BaseType_t idleLongEnough =
+                (now - lastNonEmptyTick) >= pdMS_TO_TICKS(BREAK_IDLE_MS);
+        
+            const UBaseType_t maxBreak = (maxVehicles * BREAK_MAX_FRACTION_NUM) / BREAK_MAX_FRACTION_DEN;
+        
+            if (idleLongEnough && breakCount < maxBreak) {
+                if (xSemaphoreTake(d->availableSem, 0) == pdPASS) {
+                    breakCount++;
+                    printf("[Client][%s] Dept=%s -> vehicle ON BREAK (breakCount=%u)\n",
+                           pcTaskGetName(NULL), d->name, (unsigned)breakCount);
+                }
+            }
+        }
+    }
+    
+        vTaskDelete(NULL); // Should never reach here
+
 }

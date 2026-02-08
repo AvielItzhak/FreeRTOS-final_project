@@ -38,15 +38,6 @@ SemaphoreHandle_t handleSem_deptMaint     = NULL;
 SemaphoreHandle_t handleSem_deptElect     = NULL;
 SemaphoreHandle_t handleSem_deptWaste     = NULL;
 
-/* Helper variable - Department names */
- const char depNames[EVENT_MAX][16] = { 
-    "AMBULANCE",
-    "POLICE",
-    "FIRE",
-    "MAINTENANCE",
-    "WASTE",
-    "ELECTRICITY"
-};
 
 
 /* Function to create all UDP queues */

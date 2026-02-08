@@ -22,4 +22,6 @@ build/DispatcherAndMangerDepartment_Task.o: \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/semphr.h \
  /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/queue.h \
  Inc/Shared_Configuration.h \
- /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h
+ /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/task.h \
+ /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/event_groups.h \
+ /media/aviel/SSD_DATA/כונן/RT_Embedded/FreeRTOS/project/FreeRTOS-final_project/core/Source/include/timers.h

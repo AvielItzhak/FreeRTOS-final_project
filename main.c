@@ -48,7 +48,7 @@ const size_t numDepts = sizeof(deptDesc) / sizeof(deptDesc[0]);
 
 int main(void)
 {
-    printf("[MAIN] Start Main program\n");
+    printf("[MAIN] Start Main program\n--------------------------------\n");
 
     /* Initialize all components */
     init_main(); // System Initialization
@@ -246,7 +246,7 @@ int main(void)
 
 
     /* Start Scheduler */
-    printf("\n[MAIN] starting scheduler\n--------------------------------\n");
+    printf("\n[MAIN] Starting scheduler\n--------------------------------\n");
     vTaskStartScheduler();
 
 

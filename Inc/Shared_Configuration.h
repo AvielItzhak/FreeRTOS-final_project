@@ -119,8 +119,7 @@ extern SemaphoreHandle_t handleSem_deptMaint;      // Counting Semaphore for Mai
 extern SemaphoreHandle_t handleSem_deptElect;      // Counting Semaphore for Electricity department
 extern SemaphoreHandle_t handleSem_deptWaste;      // Counting Semaphore for Waste Collection department
 
-/* Helper variable - Department names */
-extern const char depNames[EVENT_MAX][16];
+/* Helper structure for department description */
  typedef struct
 {
     const char *name;

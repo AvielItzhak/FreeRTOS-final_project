@@ -60,10 +60,10 @@ void Db_Init(void)
     char *err = NULL; // Error message pointer
     int rc = sqlite3_exec(handle_db, sql, NULL, NULL, &err);
     if (rc != SQLITE_OK) { // Schema creation failed
-        printf("[DB] schema error: %s\n", err ? err : "unknown");
+        printf("[DB] Schema error: %s\n", err ? err : "unknown");
         sqlite3_free(err);
     } else { // Schema ready
-        printf("[DB] ready: %s\n", SQLITE_DB_PATH);
+        printf("[DB] Ready: File '%s'\n", SQLITE_DB_PATH);
     }
 }
 
@@ -117,11 +117,11 @@ void Db_InsertEventPending(const EmergencyEvent_t *event)
         sqlite3_bind_int(stmt, 7, STATUS_PENDING);
 
         if (sqlite3_step(stmt) != SQLITE_DONE) { // Execution failed
-            printf("[DB] insert failed (id=%u): %s\n",
+            printf("[DB] Insert failed (id=%u): %s\n",
                    (unsigned)event->eventID, sqlite3_errmsg(handle_db));
         }
     } else { // Preparation failed
-        printf("[DB] prepare failed: %s\n", sqlite3_errmsg(handle_db));
+        printf("[DB] Prepare failed: %s\n", sqlite3_errmsg(handle_db));
     }
 
     if (stmt) sqlite3_finalize(stmt); // Check if statement pointer is not NULL before finalizing
@@ -150,11 +150,11 @@ void Db_UpdateEventCompletion(const CompletionMsg_t *msg)
         sqlite3_bind_int(stmt, 4, (int)msg->eventID);
 
         if (sqlite3_step(stmt) != SQLITE_DONE) { // Execution failed
-            printf("[DB] update failed (id=%u): %s\n",
+            printf("[DB] Update failed (id=%u): %s\n",
                    (unsigned)msg->eventID, sqlite3_errmsg(handle_db));
         }
     } else { // Preparation failed
-        printf("[DB] prepare failed: %s\n", sqlite3_errmsg(handle_db));
+        printf("[DB] Prepare failed: %s\n", sqlite3_errmsg(handle_db));
     }
 
     if (stmt) sqlite3_finalize(stmt); // Check if statement pointer is not NULL before finalizing

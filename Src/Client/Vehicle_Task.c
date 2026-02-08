@@ -77,6 +77,24 @@ void Task_Ambulance_X(void *pvParameters)
     for (;;) {
         EmergencyEvent_t event;
 
+        // 1) Wait for an event to exist (do NOT remove it yet)
+        if (xQueuePeek(handle_deptAmbulanceQ, &event, portMAX_DELAY) != pdPASS) {
+            continue;
+        }
+    
+        // 2) Get the resource semaphore for this department/type
+        SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type);
+        if (countSemaphore == NULL) {
+            // remove the bad event so we don't deadlock on the same head-of-queue forever
+            (void)xQueueReceive(handle_deptAmbulanceQ, &event, 0);
+            printf("[Client][%s] ERROR: Semaphore handle is NULL (type=%d)\n",
+                   pcTaskGetName(NULL), (int)event.type);
+            continue;
+        }
+    
+        // 3) Wait until a vehicle/resource is available (manager "break" will block us here)
+        xSemaphoreTake(countSemaphore, portMAX_DELAY);
+
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptAmbulanceQ, &event, portMAX_DELAY) == pdPASS) { // Using Ambulance queue for testing
 
@@ -131,6 +149,24 @@ void Task_Police_X(void *pvParameters)
     for (;;) {
         EmergencyEvent_t event;
 
+        // 1) Wait for an event to exist (do NOT remove it yet)
+        if (xQueuePeek(handle_deptAmbulanceQ, &event, portMAX_DELAY) != pdPASS) {
+            continue;
+        }
+    
+        // 2) Get the resource semaphore for this department/type
+        SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type);
+        if (countSemaphore == NULL) {
+            // remove the bad event so we don't deadlock on the same head-of-queue forever
+            (void)xQueueReceive(handle_deptAmbulanceQ, &event, 0);
+            printf("[Client][%s] ERROR: Semaphore handle is NULL (type=%d)\n",
+                   pcTaskGetName(NULL), (int)event.type);
+            continue;
+        }
+    
+        // 3) Wait until a vehicle/resource is available (manager "break" will block us here)
+        xSemaphoreTake(countSemaphore, portMAX_DELAY);
+
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptPoliceQ, &event, portMAX_DELAY) == pdPASS) {
             
@@ -182,6 +218,24 @@ void Task_Fire_X(void *pvParameters)
     /* Main loop for Fire Department -> Dispatcher communication */
     for (;;) {
         EmergencyEvent_t event;
+
+        // 1) Wait for an event to exist (do NOT remove it yet)
+        if (xQueuePeek(handle_deptAmbulanceQ, &event, portMAX_DELAY) != pdPASS) {
+            continue;
+        }
+    
+        // 2) Get the resource semaphore for this department/type
+        SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type);
+        if (countSemaphore == NULL) {
+            // remove the bad event so we don't deadlock on the same head-of-queue forever
+            (void)xQueueReceive(handle_deptAmbulanceQ, &event, 0);
+            printf("[Client][%s] ERROR: Semaphore handle is NULL (type=%d)\n",
+                   pcTaskGetName(NULL), (int)event.type);
+            continue;
+        }
+    
+        // 3) Wait until a vehicle/resource is available (manager "break" will block us here)
+        xSemaphoreTake(countSemaphore, portMAX_DELAY);
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptFireQ, &event, portMAX_DELAY) == pdPASS) {
@@ -236,6 +290,24 @@ void Task_Maintenance_X(void *pvParameters)
     for (;;) {
         EmergencyEvent_t event;
 
+        // 1) Wait for an event to exist (do NOT remove it yet)
+        if (xQueuePeek(handle_deptAmbulanceQ, &event, portMAX_DELAY) != pdPASS) {
+            continue;
+        }
+    
+        // 2) Get the resource semaphore for this department/type
+        SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type);
+        if (countSemaphore == NULL) {
+            // remove the bad event so we don't deadlock on the same head-of-queue forever
+            (void)xQueueReceive(handle_deptAmbulanceQ, &event, 0);
+            printf("[Client][%s] ERROR: Semaphore handle is NULL (type=%d)\n",
+                   pcTaskGetName(NULL), (int)event.type);
+            continue;
+        }
+    
+        // 3) Wait until a vehicle/resource is available (manager "break" will block us here)
+        xSemaphoreTake(countSemaphore, portMAX_DELAY);
+
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptMaintQ, &event, portMAX_DELAY) == pdPASS) {
             
@@ -288,6 +360,24 @@ void Task_Waste_X(void *pvParameters)
     /* Main loop for Waste Collection -> Dispatcher communication */
     for (;;) {
         EmergencyEvent_t event;
+
+        // 1) Wait for an event to exist (do NOT remove it yet)
+        if (xQueuePeek(handle_deptAmbulanceQ, &event, portMAX_DELAY) != pdPASS) {
+            continue;
+        }
+    
+        // 2) Get the resource semaphore for this department/type
+        SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type);
+        if (countSemaphore == NULL) {
+            // remove the bad event so we don't deadlock on the same head-of-queue forever
+            (void)xQueueReceive(handle_deptAmbulanceQ, &event, 0);
+            printf("[Client][%s] ERROR: Semaphore handle is NULL (type=%d)\n",
+                   pcTaskGetName(NULL), (int)event.type);
+            continue;
+        }
+    
+        // 3) Wait until a vehicle/resource is available (manager "break" will block us here)
+        xSemaphoreTake(countSemaphore, portMAX_DELAY);
 
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptWasteQ, &event, portMAX_DELAY) == pdPASS) {
@@ -342,18 +432,35 @@ void Task_Electricity_X(void *pvParameters)
     for (;;) {
         EmergencyEvent_t event;
 
+        // 1) Wait for an event to exist (do NOT remove it yet)
+        if (xQueuePeek(handle_deptAmbulanceQ, &event, portMAX_DELAY) != pdPASS) {
+            continue;
+        }
+    
+        // 2) Get the resource semaphore for this department/type
+        SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type);
+        if (countSemaphore == NULL) {
+            // remove the bad event so we don't deadlock on the same head-of-queue forever
+            (void)xQueueReceive(handle_deptAmbulanceQ, &event, 0);
+            printf("[Client][%s] ERROR: Semaphore handle is NULL (type=%d)\n",
+                   pcTaskGetName(NULL), (int)event.type);
+            continue;
+        }
+    
+        // 3) Wait until a vehicle/resource is available (manager "break" will block us here)
+        xSemaphoreTake(countSemaphore, portMAX_DELAY);
+
         /* Receive an emergency event from the Dispatcher queue */
         if (xQueueReceive(handle_deptElectQ, &event, portMAX_DELAY) == pdPASS) {
             
             SemaphoreHandle_t countSemaphore = DeptSemFromType(event.type); // Returns handleSem_deptElect
-
             /* Check if the semaphore handle is valid */
             if (countSemaphore == NULL) {
                 printf("[Client][%s] ERROR: Semaphore handle is NULL\n", pcTaskGetName(NULL));
                 continue;
             }
             xSemaphoreTake(countSemaphore, portMAX_DELAY); // blocks if no vehicles available (counting semaphore)
-
+            
             printf("[Client][%s] Handling event id=%u type=%d priority=%d\n",
                    pcTaskGetName(NULL), (unsigned)event.eventID, (int)event.type, (int)event.priority);
             /* Simulate handling the event - Very long delay */
